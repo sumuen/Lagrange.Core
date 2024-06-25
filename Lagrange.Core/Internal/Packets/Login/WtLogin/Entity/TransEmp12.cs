@@ -11,16 +11,18 @@ internal class TransEmp12 : TransEmp
     public TransEmp12(BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device) 
         : base(QrCodeCommand, keystore, appInfo, device) { }
 
-    protected override BinaryPacket ConstructTransEmp()
+    protected override BinaryPacket ConstructTlv()
     {
         if (Keystore.Session.QrSign != null)
         {
             return new BinaryPacket()
-                .WriteBytes(Keystore.Session.QrSign, BinaryPacket.Prefix.Uint16 | BinaryPacket.Prefix.LengthOnly)
-                .WriteUlong(0, false) // const 0
-                .WriteUint(0, false) // const 0
-                .WriteByte(0) // const 0
-                .WriteByte(0x03);         // packet end
+                .WriteUshort(0)
+                .WriteUint((uint)AppInfo.AppId)
+                .WriteBytes(Keystore.Session.QrSign, Prefix.Uint16 | Prefix.LengthOnly)
+                .WriteUlong(0) // uin
+                .WriteByte(0) // version
+                .WriteBytes(Array.Empty<byte>(), Prefix.Uint16 | Prefix.LengthOnly)
+                .WriteShort(0);
         }
 
         throw new Exception("QrSign is null");

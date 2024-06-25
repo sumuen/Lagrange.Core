@@ -10,7 +10,9 @@ public partial class EventInvoker
     
     public event LagrangeEvent<BotLogEvent>? OnBotLogEvent;
     
-    public event LagrangeEvent<BotCaptchaEvent>? OnBotCaptchaEvent; 
+    public event LagrangeEvent<BotCaptchaEvent>? OnBotCaptchaEvent;
+
+    public event LagrangeEvent<BotNewDeviceVerifyEvent>? OnBotNewDeviceVerify; 
     
     public event LagrangeEvent<GroupInvitationEvent>? OnGroupInvitationReceived; 
 
@@ -27,8 +29,20 @@ public partial class EventInvoker
     public event LagrangeEvent<GroupMemberDecreaseEvent>? OnGroupMemberDecreaseEvent;
     
     public event LagrangeEvent<FriendRequestEvent>? OnFriendRequestEvent;
+
+    public event LagrangeEvent<GroupInvitationRequestEvent>? OnGroupInvitationRequestEvent;
+    
+    public event LagrangeEvent<GroupJoinRequestEvent>? OnGroupJoinRequestEvent;
     
     public event LagrangeEvent<GroupMuteEvent>? OnGroupMuteEvent;
     
     public event LagrangeEvent<GroupMemberMuteEvent>? OnGroupMemberMuteEvent;
+    
+    public event LagrangeEvent<GroupRecallEvent>? OnGroupRecallEvent;
+    
+    public event LagrangeEvent<FriendRecallEvent>? OnFriendRecallEvent;
+    
+    public event LagrangeEvent<DeviceLoginEvent>? OnDeviceLoginEvent;
+
+    public event LagrangeEvent<FriendPokeEvent>? OnFriendPokeEvent;
 }

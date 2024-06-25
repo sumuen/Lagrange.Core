@@ -91,7 +91,7 @@ internal partial class ServiceContext : ContextBase
     public List<ProtocolEvent> ResolveEventByPacket(SsoPacket packet)
     {
         var result = new List<ProtocolEvent>();
-        var payload = packet.Payload.ReadBytes(BinaryPacket.Prefix.Uint32 | BinaryPacket.Prefix.WithPrefix);
+        var payload = packet.Payload.ReadBytes(Prefix.Uint32 | Prefix.WithPrefix);
         
         if (!_services.TryGetValue(packet.Command, out var service))
         {
@@ -114,6 +114,8 @@ internal partial class ServiceContext : ContextBase
         return result;
     }
     
+    public int GetNewSequence() => _sequenceProvider.GetNewSequence();
+    
     private class SequenceProvider
     {
         private readonly ConcurrentDictionary<string, int> _sessionSequence = new();
@@ -126,7 +128,6 @@ internal partial class ServiceContext : ContextBase
             return Interlocked.Increment(ref _sequence);
         }
         
-        public int RegisterSession(string sessionId) => 
-                _sessionSequence.GetOrAdd(sessionId, _ => GetNewSequence());
+        public int RegisterSession(string sessionId) => _sessionSequence.GetOrAdd(sessionId, GetNewSequence());
     }
 }

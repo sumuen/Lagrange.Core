@@ -3,15 +3,16 @@ using System.Text.Json.Nodes;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface.Api;
 using Lagrange.OneBot.Core.Entity.Action;
+using Lagrange.OneBot.Core.Operation.Converters;
 
 namespace Lagrange.OneBot.Core.Operation.Group;
 
 [Operation("set_group_admin")]
 public class SetGroupAdminOperation : IOperation
 {
-    public async Task<OneBotResult> HandleOperation(BotContext context, JsonObject? payload)
+    public async Task<OneBotResult> HandleOperation(BotContext context, JsonNode? payload)
     {
-        var message = payload.Deserialize<OneBotSetGroupAdmin>();
+        var message = payload.Deserialize<OneBotSetGroupAdmin>(SerializerOptions.DefaultOptions);
 
         if (message != null)
         {

@@ -1,22 +1,50 @@
 <div align="center">
 
-# Lagrange.Core
+![Lagrange.Core](https://socialify.git.ci/KonataDev/Lagrange.Core/image?description=1&descriptionEditable=An%20Implementation%20of%20NTQQ%20Protocol%2C%20with%20Pure%20C%23%2CDerived%20from%20Konata.Core&font=Jost&forks=1&issues=1&logo=https%3A%2F%2Fstatic.live.moe%2Flagrange.jpg&name=1&pattern=Diagonal%20Stripes&pulls=1&stargazers=1&theme=Auto)
+![Core](https://img.shields.io/badge/Lagrange-Core-blue)
+![OneBot](https://img.shields.io/badge/Lagrange-OneBot-blue)
+![C#](https://img.shields.io/badge/Core-%20.NET_6-blue)
+![C#](https://img.shields.io/badge/OneBot-%20.NET_7-blue)
 
-[![Core](https://img.shields.io/badge/Lagrange-Core-blue)](#)
-[![OneBot](https://img.shields.io/badge/Lagrange-OneBot-blue)](#)
-[![C#](https://img.shields.io/badge/Core-%20.NET_6-blue)](#)
-[![C#](https://img.shields.io/badge/OneBot-%20.NET_7-blue)](#)
-
-[![License](https://img.shields.io/static/v1?label=LICENSE&message=GPL-3.0&color=lightrey)](#)
+[![License](https://img.shields.io/static/v1?label=LICENSE&message=GPL-3.0&color=lightrey)](/LICENSE)
 [![Telegram](https://img.shields.io/endpoint?url=https%3A%2F%2Ftelegram-badge-4mbpu8e0fit4.runkit.sh%2F%3Furl%3Dhttps%3A%2F%2Ft.me%2F%2B6HNTeJO0JqtlNmRl)](https://t.me/+6HNTeJO0JqtlNmRl)
 
-<a href="https://trendshift.io/repositories/3486" target="_blank"><img src="https://trendshift.io/api/badge/repositories/3486" alt="Linwenxuan05%2FLagrange.Core | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+[![Image](https://trendshift.io/api/badge/repositories/3486)](https://trendshift.io/repositories/3486)
 
-An Implementation of NTQQ Protocol, with Pure C#, Derived from Konata.Core
-
-#### Currently out of Updating
+**&gt; English &lt;** | [简体中文](README_zh.md)
 
 </div>
+
+## Related Projects
+
+<table>
+<tr>
+  <td><a href="https://github.com/LagrangeDev/Lagrange.Core">Lagrange.Core</a></td>
+  <td>NTQQ Protocol Implementation（👈Here</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/whitechi73/OpenShamrock">OpenShamrock</a></td>
+  <td>Based on Xposed, OneBot Bot Framework</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/chrononeko/chronocat">Chronocat</a></td>
+  <td>Based on Electron, modular Satori Bot Framework</td>
+</tr>
+</table>
+
+## Document
+
+[Lagrange.Doc](https://lagrangedev.github.io/Lagrange.Doc/)
+
+[Docker guide](Docker.md)
+
+## Out of Active Feature Requesting
+
+Lagrange.Core has completed nearly all the function and task scheduled by Linwenxuan05, so mostly enhance to the library would be concentrated to the repo for next.
+
+Feature request would be accepted but implemented with a long duration.
+
+The new function of NTQQ supported in following versions would be added as well.
 
 ## Disclaimer
 
@@ -32,54 +60,62 @@ By using or accessing Lagrange.Core, the user acknowledges and agrees to release
 
 Please use Lagrange.Core responsibly and in accordance with the law.
 
+## SignServer
+
+https://sign.lagrangecore.org/api/sign
+
+Thanks for 外国热心网友 for Provision of Azure Servlet
+
+** Built-in SignServer is now provided, Enjoy! **
+
 ## Features List
 
-| Protocol | Support | Login                     | Support | Messages        | Support | Operations        | Support | Events              | Support |
-| -------- | :-----: | ------------------------- | :-----: | :-------------- | :-----: | :---------------- | :-----: | :------------------ | :-----: |
-| Windows  |    🟢    | QrCode                    |    🟢    | Images          |    🟢    | ~~Poke~~          |    🔴    | Captcha             |    🟢    |
-| macOS    |    🟢    | Password                  |    🟢    | Text / At       |    🟢    | Recall            |    🟡    | BotOnline           |    🟢    |
-| Linux    |    🟢    | EasyLogin                 |    🟢    | ~~Records~~     |    🔴    | Leave Group       |    🟢    | BotOffline          |    🟢    |
-|          |         | UnusalDevice<br/>Password |    🔴    | QFace           |    🟢    | ~~Special Title~~ |    🔴    | Message             |    🟢    |
-|          |         | UnusalDevice<br/>Easy     |    🟢    | Json            |    🟡    | Kick Member       |    🟢    | ~~Poke~~            |    🔴    |
-|          |         | NewDeviceVerify           |    🔴    | Xml             |    🟢    | Mute Member       |    🟢    | MessageRecall       |    🔴    |
-|          |         |                           |         | Forward         |    🟢    | Set Admin         |    🟢    | GroupMemberDecrease |    🟢    |
-|          |         |                           |         | Video           |    🔴    | Friend Request    |    🔴    | GroupMemberIncrease |    🟢    |
-|          |         |                           |         | ~~Flash Image~~ |    🔴    | Group Request     |    🟢    | GroupPromoteAdmin   |    🟢    |
-|          |         |                           |         | Reply           |    🟢    | ~~Voice Call~~    |    🔴    | GroupInvite         |    🟢    |
-|          |         |                           |         | File            |    🟡    | Client Key        |    🟢    | GroupRequestJoin    |    🔴    |
-|          |         |                           |         |                 |         | Cookies           |    🟢    | FriendRequest       |    🟢    |
-|          |         |                           |         |                 |         | Send Message      |    🟢    | ~~FriendTyping~~    |    🔴    |
-|          |         |                           |         |                 |         |                   |         | ~~FriendVoiceCall~~ |    🔴    |
+| Protocol | Support | Login                     | Support | Messages  | Support | Operations        | Support | Events              | Support |
+| -------- | :-----: | ------------------------- | :-----: | :-------- | :-----: | :---------------- | :-----: | :------------------ | :-----: |
+| Windows  |   🟢    | QrCode                    |   🟢    | Images    |   🟢    |   Poke            |   🟢    | Captcha             |   🟢    |
+| macOS    |   🟢    | Password                  |   🟢    | Text / At |   🟢    | Recall            |   🟢    | BotOnline           |   🟢    |
+| Linux    |   🟢    | EasyLogin                 |   🟢    | Records   |   🟢    | Leave Group       |   🟢    | BotOffline          |   🟢    |
+|          |         | UnusalDevice<br/>Password |   🔴    | QFace     |   🟢    | Set Special Title |   🟢    | Message              |   🟢    |
+|          |         | UnusalDevice<br/>Easy     |   🟢    | Json      |   🟢    | Kick Member       |   🟢    | ~~Poke~~             |   🔴    |
+|          |         | NewDeviceVerify           |   🟢    | Xml       |   🟢    | Mute Member       |   🟢    | MessageRecall        |   🟢    |
+|          |         |                           |         | Forward   |   🟢    | Set Admin          |   🟢    | GroupMemberDecrease  |   🟢    |
+|          |         |                           |         | Video     |   🟢    | Friend Request     |   🟢    | GroupMemberIncrease  |   🟢    |
+|          |         |                           |         | Reply     |   🟢    | Group Request      |   🟢    | GroupPromoteAdmin    |   🟢    |
+|          |         |                           |         | File      |   🟢    | ~~Voice Call~~     |   🔴    | GroupInvite          |   🟢    |
+|          |         |                           |         | Poke      |   🟢    | Client Key         |   🟢    | GroupRequestJoin     |   🟢    |
+|          |         |                           |         | LightApp  |   🟢    | Cookies            |   🟢    | FriendRequest        |   🟢    |
+|          |         |                           |         |           |         | Send Message        |   🟢    | ~~FriendTyping~~     |   🔴    |
+|          |         |                           |         |           |         |                     |         | ~~FriendVoiceCall~~   |   🔴    |
 
 ## Lagrange.OneBot
 
-### Implementation - OneBot v11
-#### The Binary for development could be found in Actions Artifacts
+> The Binary for development could be found in Actions Artifacts
+
 <Details>
 <Summary>Message Segement</Summary>
 
 | Message Segement | Support |
 | ---------------- | :-----: |
-| [Text]           |    🟢    |
-| [Face]           |    🟢    |
-| [Image]          |    🟢    |
-| [Record]         |    🔴    |
-| [Video]          |    🔴    |
-| [At]             |    🟢    |
-| [Rps]            |    🔴    |
-| [Dice]           |    🔴    |
-| [Shake]          |    🔴    |
-| [Poke]           |    🔴    |
-| [Anonymous]      |    🔴    |
-| [Share]          |    🔴    |
-| [Contact]        |    🔴    |
-| [Location]       |    🔴    |
-| [Music]          |    🔴    |
-| [Reply]          |    🔴    |
-| [Forward]        |    🟢    |
-| [Node]           |    🟢    |
-| [Xml]            |    🔴    |
-| [Json]           |    🔴    |
+| [Text]           |   🟢    |
+| [Face]           |   🟢    |
+| [Image]          |   🟢    |
+| [Record]         |   🟢    |
+| [Video]          |   🟢    |
+| [At]             |   🟢    |
+| [Rps]            |   🟢    |
+| [Dice]           |   🟢    |
+| [Shake]          |   🔴    |
+| [Poke]           |   🟢    |
+| [Anonymous]      |   🔴    |
+| [Share]          |   🔴    |
+| [Contact]        |   🔴    |
+| [Location]       |   🟢    |
+| [Music]          |   🔴    |
+| [Reply]          |   🟢    |
+| [Forward]        |   🟢    |
+| [Node]           |   🟢    |
+| [Xml]            |   🔴    |
+| [Json]           |   🟢    |
 
 [Text]: https://github.com/botuniverse/onebot-11/blob/master/message/segment.md#qq-%E8%A1%A8%E6%83%85
 [Record]: https://github.com/botuniverse/onebot-11/blob/master/message/segment.md#%E8%AF%AD%E9%9F%B3
@@ -107,49 +143,49 @@ Please use Lagrange.Core responsibly and in accordance with the law.
 <Details>
 <Summary>API</Summary>
 
-| API                        | Support |
-| -------------------------- | :-----: |
-| [/send_private_msg]        |    🟢    |
-| [/send_group_msg]          |    🟢    |
-| [/send_msg]                |    🟢    |
-| [/delete_msg]              |    🟡    |
-| [/get_msg]                 |    🟢    |
-| [/get_forward_msg]         |    🟢    |
-| ~~[/send_like]~~           |    🔴    |
-| [/set_group_kick]          |    🟢    |
-| [/set_group_ban]           |    🟢    |
-| [/set_group_anonymous_ban] |    🔴    |
-| [/set_group_whole_ban]     |    🟢    |
-| [/set_group_admin]         |    🟢    |
-| [/set_group_anonymous]     |    🔴    |
-| [/set_group_card]          |    🟢    |
-| [/set_group_name]          |    🟢    |
-| [/set_group_leave]         |    🟢    |
-| [/set_group_special_title] |    🔴    |
-| [/set_friend_add_request]  |    🔴    |
-| [/set_group_add_request]   |    🔴    |
-| [/get_login_info]          |    🟢    |
-| [/get_stranger_info]       |    🔴    |
-| [/get_friend_list]         |    🟢    |
-| [/get_group_info]          |    🟢    |
-| [/get_group_list]          |    🟢    |
-| [/get_group_member_info]   |    🔴    |
-| [/get_group_member_list]   |    🔴    |
-| [/get_group_honor_info]    |    🔴    |
-| [/get_cookies]             |    🔴    |
-| [/get_csrf_token]          |    🔴    |
-| [/get_credentials]         |    🔴    |
-| [/get_record]              |    🔴    |
-| [/get_image]               |    🔴    |
-| [/can_send_image]          |    🔴    |
-| [/can_send_record]         |    🔴    |
-| [/get_status]              |    🔴    |
-| [/get_version_info]        |    🟢    |
-| [/set_restart]             |    🔴    |
-| [/clean_cache]             |    🔴    |
+| API                            | Support |
+|--------------------------------| :-----: |
+| [/send_private_msg]            |   🟢    |
+| [/send_group_msg]              |   🟢    |
+| [/send_msg]                    |   🟢    |
+| [/delete_msg]                  |   🟢    |
+| [/get_msg]                     |   🟢    |
+| [/get_forward_msg]             |   🟢    |
+| [/send_like]                   |   🟢    |
+| [/set_group_kick]              |   🟢    |
+| [/set_group_ban]               |   🟢    |
+| ~~[/set_group_anonymous_ban]~~ |   🔴    |
+| [/set_group_whole_ban]         |   🟢    |
+| [/set_group_admin]             |   🟢    |
+| ~~[/set_group_anonymous]~~     |   🔴    |
+| [/set_group_card]              |   🟢    |
+| [/set_group_name]              |   🟢    |
+| [/set_group_leave]             |   🟢    |
+| [/set_group_special_title]     |   🟢    |
+| [/set_friend_add_request]      |   🟢    |
+| [/set_group_add_request]       |   🟢    |
+| [/get_login_info]              |   🟢    |
+| [/get_stranger_info]           |   🟢    |
+| [/get_friend_list]             |   🟢    |
+| [/get_group_info]              |   🟢    |
+| [/get_group_list]              |   🟢    |
+| [/get_group_member_info]       |   🟢    |
+| [/get_group_member_list]       |   🟢    |
+| [/get_group_honor_info]        |   🟢    |
+| [/get_cookies]                 |   🟢    |
+| [/get_csrf_token]              |   🟢    |
+| [/get_credentials]             |   🟢    |
+| [/get_record]                  |   🔴    |
+| [/get_image]                   |   🔴    |
+| [/can_send_image]              |   🟢    |
+| [/can_send_record]             |   🟢    |
+| [/get_status]                  |   🟢    |
+| [/get_version_info]            |   🟢    |
+| [/set_restart]                 |   🟢    |
+| [/clean_cache]                 |   🔴    |
 
 [/send_private_msg]: https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_private_msg-%E5%8F%91%E9%80%81%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
-[/send_group_msg]: https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_group_msg-%E5%8F%91%E9%80%81%E7%BE%A4%E6%B6%88%E6%81%AF 
+[/send_group_msg]: https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_group_msg-%E5%8F%91%E9%80%81%E7%BE%A4%E6%B6%88%E6%81%AF
 [/send_msg]: https://github.com/botuniverse/onebot-11/blob/master/api/public.md#send_msg-发送消息
 [/delete_msg]: https://github.com/botuniverse/onebot-11/blob/master/api/public.md#delete_msg-撤回消息
 [/get_msg]: https://github.com/botuniverse/onebot-11/blob/master/api/public.md#get_msg-获取消息
@@ -194,23 +230,23 @@ Please use Lagrange.Core responsibly and in accordance with the law.
 
 | PostType | EventName                      | Support |
 | -------- | ------------------------------ | :-----: |
-| Message  | [Private Message]              |    🔴    |
-| Message  | [Group Message]                |    🟢    |
-| Notice   | [Group File Upload]            |    🔴    |
-| Notice   | [Group Admin Change]           |    🟢    |
-| Notice   | [Group Member Decrease]        |    🟢    |
-| Notice   | [Group Member Increase]        |    🟢    |
-| Notice   | [Group Mute]                   |    🟢    |
-| Notice   | [Friend Add]                   |    🔴    |
-| Notice   | [Group Recall Message]         |    🔴    |
-| Notice   | [Friend Recall Message]        |    🔴    |
-| Notice   | [Group Poke]                   |    🔴    |
-| Notice   | [Group red envelope luck king] |    🔴    |
-| Notice   | [Group Member Honor Changed]   |    🔴    |
-| Request  | [Add Friend Request]           |    🟢    |
-| Request  | [Group Request/Invitations]    |    🔴    |
-| Meta     | [LifeCycle]                    |    🟢    |
-| Meta     | [Heartbeat]                    |    🟢    |
+| Message  | [Private Message]              |   🟢    |
+| Message  | [Group Message]                |   🟢    |
+| Notice   | [Group File Upload]            |   🟢    |
+| Notice   | [Group Admin Change]           |   🟢    |
+| Notice   | [Group Member Decrease]        |   🟢    |
+| Notice   | [Group Member Increase]        |   🟢    |
+| Notice   | [Group Mute]                   |   🟢    |
+| Notice   | [Friend Add]                   |   🟢    |
+| Notice   | [Group Recall Message]         |   🟢    |
+| Notice   | [Friend Recall Message]        |   🟢    |
+| Notice   | [Group Poke]                   |   🔴    |
+| Notice   | [Group red envelope luck king] |   🔴    |
+| Notice   | [Group Member Honor Changed]   |   🔴    |
+| Request  | [Add Friend Request]           |   🟢    |
+| Request  | [Group Request/Invitations]    |   🟢    |
+| Meta     | [LifeCycle]                    |   🟢    |
+| Meta     | [Heartbeat]                    |   🟢    |
 
 [Private Message]: https://github.com/botuniverse/onebot-11/blob/master/event/message.md#%E7%A7%81%E8%81%8A%E6%B6%88%E6%81%AF
 [Group Message]: https://github.com/botuniverse/onebot-11/blob/master/event/message.md#%E7%BE%A4%E6%B6%88%E6%81%AF
@@ -237,10 +273,10 @@ Please use Lagrange.Core responsibly and in accordance with the law.
 
 | CommunicationType  | Support |
 | ------------------ | :-----: |
-| [Http]             |    🔴    |
-| [Http-Post]        |    🔴    |
-| [ForwardWebSocket] |    🟢    |
-| [ReverseWebSocket] |    🟢    |
+| [Http]             |   🟢    |
+| [Http-Post]        |   🟢    |
+| [ForwardWebSocket] |   🟢    |
+| [ReverseWebSocket] |   🟢    |
 
 [Http]: https://github.com/botuniverse/onebot-11/blob/master/communication/http.md
 [Http-Post]: https://github.com/botuniverse/onebot-11/blob/master/communication/http-post.md
@@ -249,92 +285,92 @@ Please use Lagrange.Core responsibly and in accordance with the law.
 
 </Details>
 
-#### appsettings.json Example
+### `appsettings.json` Example
+
+> As the Password is empty here, this indicates that QRCode login is used
 
 ```json
 {
-    "Logging": {
-        "LogLevel": {
-            "Default": "Trace",
-            "Microsoft": "Warning",
-            "Microsoft.Hosting.Lifetime": "Information"
-        }
-    },
-    "SignServerUrl": "",
-    "Account": {
-        "Uin": 0,
-        "Password": "",
-        "Protocol": "Linux",
-        "AutoReconnect": true,
-        "GetOptimumServer": true
-    },
-    "Message": {
-      "IgnoreSelf": true
-    },
-    "Implementation": {
-        "ForwardWebSocket": {
-            "Host": "127.0.0.1",
-            "Port": 8081,
-            "HeartBeatInterval": 5000,
-            "AccessToken": ""
-        },
-        "ReverseWebSocket": {
-            "Host": "127.0.0.1",
-            "Port": 8080,
-            "Suffix": "/onebot/v11/ws",
-            "ReconnectInterval": 5000,
-            "HeartBeatInterval": 5000,
-            "AccessToken": ""
-        },
-        "Http": {
-            "Host": "",
-            "Port": 0,
-            "EventEnabled": false
-        },
-        "HttpPost": {
-            "Host": "127.0.0.1",
-            "Port": 8080,
-            "Suffix": "/onebot/v11/http",
-            "Timeout": 0
-        }
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
     }
+  },
+  "SignServerUrl": "https://sign.lagrangecore.org/api/sign",
+  "Account": {
+    "Uin": 0,
+    "Password": "",
+    "Protocol": "Linux",
+    "AutoReconnect": true,
+    "GetOptimumServer": true
+  },
+  "Message": {
+    "IgnoreSelf": true,
+    "StringPost": false
+  },
+  "QrCode": {
+    "ConsoleCompatibilityMode": false
+  },
+  "Implementations": [
+    {
+      "Type": "ReverseWebSocket",
+      "Host": "127.0.0.1",
+      "Port": 8080,
+      "Suffix": "/onebot/v11/ws",
+      "ReconnectInterval": 5000,
+      "HeartBeatInterval": 5000,
+      "HeartBeatEnable": true,
+      "AccessToken": ""
+    },
+    {
+      "Type": "ForwardWebSocket",
+      "Host": "*",
+      "Port": 8081,
+      "HeartBeatInterval": 5000,
+      "HeartBeatEnable": true,
+      "AccessToken": ""
+    },
+    {
+      "Type": "HttpPost",
+      "Host": "127.0.0.1",
+      "Port": 8082,
+      "Suffix": "/",
+      "HeartBeatInterval": 5000,
+      "HeartBeatEnable": true,
+      "AccessToken": ""
+    },
+    {
+      "Type": "Http",
+      "Host": "*",
+      "Port": 8083,
+      "AccessToken": ""
+    }
+  ]
 }
 ```
 
-- Create a file named 'appsettings.json' under Lagrange.OneBot executable directory
-- As the Password is empty here, this indicates that QRCode login is used
-- After the QRCode Login, write Uin back to perform EasyLogin
-- If you want a multi connection, remove the 'Implementation' Part and add
-```json
-{    "Implementations": [
-      {
-        "Type": "ReverseWebSocket",
-        "Host": "127.0.0.1",
-        "Port": 8080,
-        "Suffix": "/onebot/v11/ws",
-        "ReconnectInterval": 5000,
-        "HeartBeatInterval": 5000,
-        "AccessToken": ""
-      },
-      {
-        "Type": "ReverseWebSocket",
-        "Host": "127.0.0.1",
-        "Port": 8081,
-        "HeartBeatInterval": 5000,
-        "AccessToken": ""
-      }
-    ]
-}
-    
-  ```
+> [!WARNING]
+> Currently, `ForwardWebSocket` and `Http` are implemented based on `HttpListener`, which has the following problems:
+> 
+> 1. On Linux, the `Host` header of an Http request must match the value of `Prefix` unless it is `+` or `*`, so configure the `Host` of `ForwardWebSocket` and `Http` to be the domain name or IP you are using to access it.
+> 
+> 2. On Windows, the `HttpListener` is based on the `http.sys` implementation, so you need to register `urlacl` before using it. see [netsh](https://learn.microsoft.com/en-us/windows-server/networking/technologies/netsh/netsh-http). You can also start `Lagrange.OneBot` using the administrator, at which point `HttpListener` will automatically register the required `urlacl`.
 
+## NOTICE BEFORE LOGIN
+
+- The NewDeviceLogin feature has not been implemented yet. It is recommended to use QRCode login for now.
+- Currently, only the signature server implementation for Linux protocol is available. It is recommended to use the Linux protocol.
 
 ## Known Problem
 
-~~- [ ] Signature Service is currently not established, so the login tend to be failed and return code may be 45, you can establish your own sign service by rewriting the `Signature` static class.~~
+- ~~[ ] Signature Service is currently not established, so the login tend to be failed and return code may be 45, you can establish your own sign service by rewriting the `Signature` static class.~~
 
 ~~Thanks KonataDev/TheSnowfield for Provision of Signature API~~
 
-Signature API is now not provided, you may need to find it somewhere and inherit `SignProvider` class for `CustomSignProvider` in  `BotConfig`
+~~Signature API is now not provided, you may need to find it somewhere and inherit `SignProvider` class for `CustomSignProvider` in `BotConfig`~~
+
+- ~~Built-in SignServer is now provided, Enjoy!~~
 
 - Signature of Windows and macOS is missing, you need to figure out by your self

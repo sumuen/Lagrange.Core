@@ -22,10 +22,10 @@ internal class GroupFSViewService : BaseService<GroupFSViewEvent>
     {
         object packet = input switch
         {
-            GroupFSListEvent list => new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8_1>(
-                new OidbSvcTrpcTcp0x6D8_1
+            GroupFSListEvent list => new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8>(
+                new OidbSvcTrpcTcp0x6D8
                 {
-                    List = new OidbSvcTrpcTcp0x6D8_1List
+                    List = new OidbSvcTrpcTcp0x6D8List
                     {
                         GroupUin = list.GroupUin,
                         AppId = 7,
@@ -36,17 +36,17 @@ internal class GroupFSViewService : BaseService<GroupFSViewEvent>
                         Field17 = 2,
                         Field18 = 0
                     }
-                }, false, true),
-            GroupFSCountEvent count => new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8_2>(
-                new OidbSvcTrpcTcp0x6D8_2
+                }, 0x6D8, 1, false, true),
+            GroupFSCountEvent count => new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8>(
+                new OidbSvcTrpcTcp0x6D8
                 {
-                    Count = new OidbSvcTrpcTcp0x6D8_1Count { GroupUin = count.GroupUin, AppId = 7, BusId = 6 }
-                }, false, true),
-            GroupFSSpaceEvent space => new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8_3>(
-                new OidbSvcTrpcTcp0x6D8_3
+                    Count = new OidbSvcTrpcTcp0x6D8Count { GroupUin = count.GroupUin, AppId = 7, BusId = 6 }
+                }, 0x6D8, 2, false, true),
+            GroupFSSpaceEvent space => new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8>(
+                new OidbSvcTrpcTcp0x6D8
                 {
-                    Space = new OidbSvcTrpcTcp0x6D8_1Space { GroupUin = space.GroupUin, AppId = 7 }
-                }, false, true),
+                    Space = new OidbSvcTrpcTcp0x6D8Space { GroupUin = space.GroupUin, AppId = 7 }
+                },0x6D8, 3, false, true),
             _ => throw new Exception()
         };
 
@@ -55,17 +55,17 @@ internal class GroupFSViewService : BaseService<GroupFSViewEvent>
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out GroupFSViewEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var packet = Serializer.Deserialize<OidbSvcTrpcTcpResponse<OidbSvcTrpcTcp0x6D8_1Response>>(input.AsSpan());
+        var packet = Serializer.Deserialize<OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D8_1Response>>(input);
 
         extraEvents = null;
 
         if (packet.Body.List != null)
         {
-            var list = packet.Body.List;
-            var fileEntries = list.Items.Select(x =>
+            var items = packet.Body.List.Items ?? new List<OidbSvcTrpcTcp0x6D8_1ResponseItem>();
+            var fileEntries = items.Select(x =>
             {
                 var f = x.FileInfo;
                 var s = x.FolderInfo;

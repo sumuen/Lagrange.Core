@@ -16,7 +16,7 @@ internal class GroupTransferService : BaseService<GroupTransferEvent>
     protected override bool Build(GroupTransferEvent input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out BinaryPacket output, out List<BinaryPacket>? extraPackets)
     {
-        var packet = new OidbSvcTrpcTcpBase<OidvSvcTrpcTcp0x89E_0>(new OidvSvcTrpcTcp0x89E_0
+        var packet = new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x89E_0>(new OidbSvcTrpcTcp0x89E_0
         {
             GroupUin = input.GroupUin,
             SourceUid = input.SourceUid,
@@ -28,10 +28,10 @@ internal class GroupTransferService : BaseService<GroupTransferEvent>
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, out GroupTransferEvent output,
-        out List<ProtocolEvent>? extraEvents)
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, 
+        out GroupTransferEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var payload = Serializer.Deserialize<OidbSvcTrpcTcpResponse<byte[]>>(input.AsSpan());
+        var payload = Serializer.Deserialize<OidbSvcTrpcTcpBase<byte[]>>(input);
         
         output = GroupTransferEvent.Result((int)payload.ErrorCode);
         extraEvents = null;

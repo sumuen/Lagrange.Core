@@ -125,23 +125,129 @@ public sealed class MessageBuilder
         
         return this;
     }
-
-    public MessageBuilder File(byte[] file, string fileName)
+    
+    public MessageBuilder Video(byte[] file, int videoLength = 0)
     {
-        var fileEntity = new FileEntity(file, fileName);
-        _chain.Add(fileEntity);
+        var videoEntity = new VideoEntity(file, videoLength);
+        _chain.Add(videoEntity);
+
+        return this;
+    }
+
+    public MessageBuilder Video(string filePath, int videoLength = 0)
+    {
+        var videoEntity = new VideoEntity(filePath, videoLength);
+        _chain.Add(videoEntity);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Add a audio entity to the message chain
+    /// </summary>
+    /// <param name="file">The audio file that has already been converted to SilkCodec</param>
+    /// <param name="audioLength">The length of the audio file that directly shown</param>
+    public MessageBuilder Record(byte[] file, int audioLength = 0)
+    {
+        var recordEntity = new RecordEntity(file, audioLength);
+        _chain.Add(recordEntity);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Add a audio entity to the message chain
+    /// </summary>
+    /// <param name="filePath">The audio file that has already been converted to SilkCodec</param>
+    /// <param name="audioLength">The length of the audio file that directly shown</param>
+    public MessageBuilder Record(string filePath, int audioLength = 0)
+    {
+        var recordEntity = new RecordEntity(filePath, audioLength);
+        _chain.Add(recordEntity);
+
+        return this;
+    }
+
+    /// <summary>
+    /// Add a dedicated poke entity to message chain
+    /// </summary>
+    /// <param name="type">Poke ID, default value is the preset of NTQQ</param>
+    public MessageBuilder Poke(uint type = 1)
+    {
+        var pokeEntity = new PokeEntity(type);
+        _chain.Add(pokeEntity);
+
+        return this;
+    }
+    
+    /// <summary>
+    /// Add a dedicated LightApp entity to message chain
+    /// </summary>
+    /// <param name="payload">Json Payload</param>
+    public MessageBuilder LightApp(string payload)
+    {
+        var pokeEntity = new LightAppEntity(payload);
+        _chain.Add(pokeEntity);
+
+        return this;
+    }
+    
+    public MessageBuilder LongMsg(string resId)
+    {
+        var longMsgEntity = new LongMsgEntity(resId);
+        _chain.Add(longMsgEntity);
         
         return this;
     }
     
-    public MessageBuilder File(string filePath)
+    public MessageBuilder LongMsg(MessageChain chain)
     {
-        var fileEntity = new FileEntity(filePath);
-        _chain.Add(fileEntity);
+        var longMsgEntity = new LongMsgEntity(chain);
+        _chain.Add(longMsgEntity);
         
         return this;
     }
-
+    
+    public MessageBuilder Markdown(string json)
+    {
+        var markdownEntity = new MarkdownEntity(json);
+        _chain.Add(markdownEntity);
+        
+        return this;
+    }
+    
+    public MessageBuilder Markdown(MarkdownData data)
+    {
+        var markdownEntity = new MarkdownEntity(data);
+        _chain.Add(markdownEntity);
+        
+        return this;
+    }
+    
+    public MessageBuilder Keyboard(string json)
+    {
+        var keyboardEntity = new KeyboardEntity(json);
+        _chain.Add(keyboardEntity);
+        
+        return this;
+    }
+    
+    public MessageBuilder Keyboard(KeyboardData data)
+    {
+        var keyboardEntity = new KeyboardEntity(data);
+        _chain.Add(keyboardEntity);
+        
+        return this;
+    }
+    
+    public MessageBuilder MarketFace(string faceId, int tabId, string key, string summary)
+    {
+        var marketFaceEntity = new MarketfaceEntity(faceId, tabId, key, summary);
+        _chain.Add(marketFaceEntity);
+        
+        return this;
+    }
+    
     public MessageBuilder Add(IMessageEntity entity)
     {
         _chain.Add(entity);

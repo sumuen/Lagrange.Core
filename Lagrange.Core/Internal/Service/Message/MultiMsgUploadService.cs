@@ -37,8 +37,8 @@ internal class MultiMsgUploadService : BaseService<MultiMsgUploadEvent>
         {
             Info = new SendLongMsgInfo
             {
-                Type = 3,
-                Uid = new LongMsgUid { Uid = input.GroupUin.ToString() ?? keystore.Uid },
+                Type = input.GroupUin == null ? 1u : 3u,
+                Uid = new LongMsgUid { Uid = input.GroupUin?.ToString() ?? keystore.Uid },
                 GroupUin = input.GroupUin,
                 Payload = deflate
             },
@@ -46,7 +46,7 @@ internal class MultiMsgUploadService : BaseService<MultiMsgUploadEvent>
             {
                 Field1 = 4,
                 Field2 = 1,
-                Field3 = 3,
+                Field3 = 7,
                 Field4 = 0
             }
         };
@@ -56,10 +56,10 @@ internal class MultiMsgUploadService : BaseService<MultiMsgUploadEvent>
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, 
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, 
         out MultiMsgUploadEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var packet = Serializer.Deserialize<SendLongMsgResp>(input.AsSpan());
+        var packet = Serializer.Deserialize<SendLongMsgResp>(input);
         
         output = MultiMsgUploadEvent.Result(0, packet.Result.ResId);
         extraEvents = null;

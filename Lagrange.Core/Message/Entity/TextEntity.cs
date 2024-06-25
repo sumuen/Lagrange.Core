@@ -6,7 +6,7 @@ namespace Lagrange.Core.Message.Entity;
 [MessageElement(typeof(Text))]
 public class TextEntity : IMessageEntity
 {
-    public string Text { get; }
+    public string Text { get; set; }
     
     public TextEntity() => Text = "";
     
@@ -20,11 +20,17 @@ public class TextEntity : IMessageEntity
         };
     }
     
-    IMessageEntity? IMessageEntity.UnpackElement(Elem elems) => 
-        elems.Text is { Str: not null, Attr6Buf: null } text ? new TextEntity(text.Str) : null;
+    IMessageEntity? IMessageEntity.UnpackElement(Elem elems)
+    {
+        return elems.Text is { Str: not null, Attr6Buf: null } or { Str: not null, Attr6Buf.Length: 0 }
+            ? new TextEntity(elems.Text.Str) 
+            : null;
+    }
 
     public string ToPreviewString()
     {
         return $"[Text]: {Text}";
     }
+
+    public string ToPreviewText() => Text;
 }

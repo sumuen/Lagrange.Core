@@ -13,4 +13,6 @@ internal class SsoNTLoginError
     [ProtoMember(2)] public string Tag { get; set; }
     
     [ProtoMember(3)] public string Message { get; set; }
+    
+    [ProtoMember(5)] public string? NewDeviceVerifyUrl { get; set; }
 }

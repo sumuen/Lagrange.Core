@@ -1,11 +1,11 @@
 using Lagrange.Core.Common;
 using Lagrange.Core.Common.Interface;
 using Lagrange.Core.Utility.Sign;
-using Lagrange.OneBot.Core.Message;
 using Lagrange.OneBot.Core.Network;
 using Lagrange.OneBot.Core.Network.Service;
 using Lagrange.OneBot.Core.Notify;
 using Lagrange.OneBot.Core.Operation;
+using Lagrange.OneBot.Message;
 using Lagrange.OneBot.Utility;
 using LiteDB;
 using Microsoft.Extensions.Configuration;
@@ -46,7 +46,8 @@ public sealed class LagrangeAppBuilder
             Protocol = isSuccess ? protocol : Protocols.Linux,
             AutoReconnect = bool.Parse(Configuration["Account:AutoReconnect"] ?? "true"),
             UseIPv6Network = bool.Parse(Configuration["Account:UseIPv6Network"] ?? "false"),
-            GetOptimumServer = bool.Parse(Configuration["Account:GetOptimumServer"] ?? "true")
+            GetOptimumServer = bool.Parse(Configuration["Account:GetOptimumServer"] ?? "true"),
+            AutoReLogin = bool.Parse(Configuration["Account:AutoReLogin"] ?? "true"),
         };
 
         BotKeystore keystore;
@@ -55,6 +56,11 @@ public sealed class LagrangeAppBuilder
             keystore = Configuration["Account:Uin"] is { } uin && Configuration["Account:Password"] is { } password 
                     ? new BotKeystore(uint.Parse(uin), password) 
                     : new BotKeystore();
+            string? directoryPath = Path.GetDirectoryName(keystorePath);
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
         }
         else
         {
@@ -66,6 +72,11 @@ public sealed class LagrangeAppBuilder
         {
             deviceInfo = BotDeviceInfo.GenerateInfo();
             string json = JsonSerializer.Serialize(deviceInfo);
+            string? directoryPath = Path.GetDirectoryName(deviceInfoPath);
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
             File.WriteAllText(deviceInfoPath, json);
         }
         else
@@ -87,15 +98,27 @@ public sealed class LagrangeAppBuilder
         Services.AddScoped<ForwardWSService>();
         Services.AddScoped<ILagrangeWebServiceFactory<ReverseWSService>, ReverseWSServiceFactory>();
         Services.AddScoped<ReverseWSService>();
+        Services.AddScoped<ILagrangeWebServiceFactory<HttpService>, HttpServiceFactory>();
+        Services.AddScoped<HttpService>();
+        Services.AddScoped<ILagrangeWebServiceFactory<HttpPostService>, HttpPostServiceFactory>();
+        Services.AddScoped<HttpPostService>();
         Services.AddScoped<ILagrangeWebServiceFactory, DefaultLagrangeWebServiceFactory>();
         Services.AddScoped(services =>
         {
             return services.GetRequiredService<ILagrangeWebServiceFactory>().Create() ?? throw new Exception("Invalid conf detected");
         });
 
-        Services.AddSingleton<LiteDatabase>(x => new LiteDatabase(Configuration["ConfigPath:Database"] ?? $"lagrange-{Configuration["Account:Uin"]}.db"));
+        Services.AddSingleton<LiteDatabase>(x =>
+        {
+            string path = Configuration["ConfigPath:Database"] ?? $"lagrange-{Configuration["Account:Uin"]}.db";
+            
+            var db = new LiteDatabase(path);
+            db.CheckpointSize = 50;
+            return db;
+        });
         Services.AddSingleton<SignProvider, OneBotSigner>();
 
+        Services.AddSingleton<MusicSigner>();
         Services.AddSingleton<NotifyService>();
         Services.AddSingleton<MessageService>();
         Services.AddSingleton<OperationService>();

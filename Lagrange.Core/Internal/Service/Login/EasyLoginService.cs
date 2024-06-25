@@ -24,15 +24,15 @@ internal class EasyLoginService : BaseService<EasyLoginEvent>
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, 
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, 
         out EasyLoginEvent output, out List<ProtocolEvent>? extraEvents)
     {
         if (keystore.Session.ExchangeKey == null) throw new InvalidOperationException("ExchangeKey is null");
-        var encrypted = Serializer.Deserialize<SsoNTLoginEncryptedData>(input.AsSpan());
+        var encrypted = Serializer.Deserialize<SsoNTLoginEncryptedData>(input);
 
         if (encrypted.GcmCalc != null)
         {
-            var decrypted = new AesGcmImpl().Decrypt(encrypted.GcmCalc, keystore.Session.ExchangeKey);
+            var decrypted = AesGcmImpl.Decrypt(encrypted.GcmCalc, keystore.Session.ExchangeKey);
             var response = Serializer.Deserialize<SsoNTLoginBase<SsoNTLoginResponse>>(decrypted.AsSpan());
             var body = response.Body;
             
@@ -49,6 +49,7 @@ internal class EasyLoginService : BaseService<EasyLoginEvent>
                 keystore.Session.D2 = body.Credentials.D2;
                 keystore.Session.D2Key = body.Credentials.D2Key;
                 keystore.Session.TempPassword = body.Credentials.TempPassword;
+                keystore.Session.SessionDate = DateTime.Now;
 
                 output = EasyLoginEvent.Result(0);
             }

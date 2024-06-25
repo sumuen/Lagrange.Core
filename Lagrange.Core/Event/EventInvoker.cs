@@ -19,6 +19,7 @@ public partial class EventInvoker : IDisposable
         RegisterEvent((BotOfflineEvent e) => OnBotOfflineEvent?.Invoke(context, e));
         RegisterEvent((BotLogEvent e) => OnBotLogEvent?.Invoke(context, e));
         RegisterEvent((BotCaptchaEvent e) => OnBotCaptchaEvent?.Invoke(context, e));
+        RegisterEvent((BotNewDeviceVerifyEvent e) => OnBotNewDeviceVerify?.Invoke(context, e));
         RegisterEvent((GroupInvitationEvent e) => OnGroupInvitationReceived?.Invoke(context, e));
         RegisterEvent((FriendMessageEvent e) => OnFriendMessageReceived?.Invoke(context, e));
         RegisterEvent((GroupMessageEvent e) => OnGroupMessageReceived?.Invoke(context, e));
@@ -27,8 +28,14 @@ public partial class EventInvoker : IDisposable
         RegisterEvent((GroupMemberIncreaseEvent e) => OnGroupMemberIncreaseEvent?.Invoke(context, e));
         RegisterEvent((GroupMemberDecreaseEvent e) => OnGroupMemberDecreaseEvent?.Invoke(context, e));
         RegisterEvent((FriendRequestEvent e) => OnFriendRequestEvent?.Invoke(context, e));
+        RegisterEvent((GroupInvitationRequestEvent e) => OnGroupInvitationRequestEvent?.Invoke(context, e));
+        RegisterEvent((GroupJoinRequestEvent e) => OnGroupJoinRequestEvent?.Invoke(context, e));
         RegisterEvent((GroupMuteEvent e) => OnGroupMuteEvent?.Invoke(context, e));
         RegisterEvent((GroupMemberMuteEvent e) => OnGroupMemberMuteEvent?.Invoke(context, e));
+        RegisterEvent((GroupRecallEvent e) => OnGroupRecallEvent?.Invoke(context, e));
+        RegisterEvent((FriendRecallEvent e) => OnFriendRecallEvent?.Invoke(context, e));
+        RegisterEvent((DeviceLoginEvent e) => OnDeviceLoginEvent?.Invoke(context, e));
+        RegisterEvent((FriendPokeEvent e) => OnFriendPokeEvent?.Invoke(context, e));
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

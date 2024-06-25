@@ -1,4 +1,7 @@
 using Lagrange.Core.Common.Entity;
+using Lagrange.Core.Event.EventArg;
+using Lagrange.Core.Message;
+using Lagrange.Core.Message.Entity;
 
 namespace Lagrange.Core.Common.Interface.Api;
 
@@ -51,11 +54,29 @@ public static class GroupExt
     public static Task<bool> LeaveGroup(this BotContext bot, uint groupUin)
         => bot.ContextCollection.Business.OperationLogic.LeaveGroup(groupUin);
 
-    public static Task<bool> InviteGroup(this BotContext bot, uint groupUin, List<uint> invitedUins)
+    public static Task<bool> InviteGroup(this BotContext bot, uint groupUin, Dictionary<uint, uint?> invitedUins)
         => bot.ContextCollection.Business.OperationLogic.InviteGroup(groupUin, invitedUins);
     
-    public static Task<bool> GroupInvitationRequest(this BotContext bot, BotGroupRequest request, bool accept = true)
-        => bot.ContextCollection.Business.OperationLogic.GroupInvitationRequest(request.GroupUin, request.Sequence, accept);
+    public static Task<bool> SetGroupRequest(this BotContext bot, BotGroupRequest request, bool accept = true)
+        => bot.ContextCollection.Business.OperationLogic.SetGroupRequest(request.GroupUin, request.Sequence, (uint)request.EventType, accept);
+    
+    public static Task<bool> SetFriendRequest(this BotContext bot, FriendRequestEvent request, bool accept = true)
+        => bot.ContextCollection.Business.OperationLogic.SetFriendRequest(request.SourceUid, accept);
+
+    public static Task<bool> GroupPoke(this BotContext bot, uint groupUin, uint friendUin)
+        => bot.ContextCollection.Business.OperationLogic.GroupPoke(groupUin, friendUin);
+
+    public static Task<bool> SetEssenceMessage(this BotContext bot, MessageChain chain)
+        => bot.ContextCollection.Business.OperationLogic.SetEssenceMessage(chain.GroupUin ?? 0, chain.Sequence, (uint)(chain.MessageId & 0xFFFFFFFF));
+    
+    public static Task<bool> RemoveEssenceMessage(this BotContext bot, MessageChain chain)
+        => bot.ContextCollection.Business.OperationLogic.RemoveEssenceMessage(chain.GroupUin ?? 0, chain.Sequence, (uint)(chain.MessageId & 0xFFFFFFFF));
+
+    public static Task<bool> GroupSetSpecialTitle(this BotContext bot, uint groupUin, uint targetUin, string title)
+        => bot.ContextCollection.Business.OperationLogic.GroupSetSpecialTitle(groupUin, targetUin, title);
+    
+    public static Task<bool> GroupSetMessageReaction(this BotContext bot, uint groupUin, uint sequence, string code)
+        => bot.ContextCollection.Business.OperationLogic.SetMessageReaction(groupUin, sequence, code);
 
     #region Group File System
 
@@ -73,6 +94,15 @@ public static class GroupExt
 
     public static Task<bool> GroupFSMove(this BotContext bot, uint groupUin, string fileId, string parentDirectory, string targetDirectory)
         => bot.ContextCollection.Business.OperationLogic.GroupFSMove(groupUin, fileId, parentDirectory, targetDirectory);
+    
+    public static Task<bool> GroupFSDelete(this BotContext bot, uint groupUin, string fileId)
+        => bot.ContextCollection.Business.OperationLogic.GroupFSDelete(groupUin, fileId);
+    
+    public static Task<bool> GroupFSCreateFolder(this BotContext bot, uint groupUin, string name)
+        => bot.ContextCollection.Business.OperationLogic.GroupFSCreateFolder(groupUin, name);
+    
+    public static Task<bool> GroupFSUpload(this BotContext bot, uint groupUin, FileEntity fileEntity, string targetDirectory = "/")
+        => bot.ContextCollection.Business.OperationLogic.GroupFSUpload(groupUin, fileEntity, targetDirectory);
 
     #endregion
 }

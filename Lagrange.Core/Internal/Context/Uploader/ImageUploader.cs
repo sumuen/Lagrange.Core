@@ -1,4 +1,6 @@
 using Lagrange.Core.Internal.Event.Message;
+using Lagrange.Core.Internal.Event.System;
+using Lagrange.Core.Internal.Packets.Service.Highway;
 using Lagrange.Core.Message;
 using Lagrange.Core.Message.Entity;
 using Lagrange.Core.Utility.Extension;
@@ -8,28 +10,39 @@ namespace Lagrange.Core.Internal.Context.Uploader;
 [HighwayUploader(typeof(ImageEntity))]
 internal class ImageUploader : IHighwayUploader
 {
-    private const string Tag = nameof(ImageUploader);
-    
     public async Task UploadPrivate(ContextCollection context, MessageChain chain, IMessageEntity entity)
     {
         if (entity is ImageEntity { ImageStream: not null } image)
         {
-            string uid = await context.Business.CachingLogic.ResolveUid(chain.GroupUin, chain.FriendUin) ?? 
-                         throw new Exception($"Failed to resolve Uid for Uin {chain.FriendUin}");
-            var @event = ImageUploadEvent.Create(image.ImageStream, uid);
-            var results = await context.Business.SendEvent(@event);
-            if (results.Count != 0)
-            {
-                var ticketResult = (ImageUploadEvent)results[0];
-                if (!ticketResult.IsExist)
-                {
-                    bool hwSuccess = await context.Highway.UploadSrcByStreamAsync(1, image.ImageStream, ticketResult.Ticket, @event.FileMd5.UnHex());
-                    if (!hwSuccess) throw new Exception();
-                }
+            var uploadEvent = ImageUploadEvent.Create(image, chain.FriendInfo?.Uid ?? "");
+            var uploadResult = await context.Business.SendEvent(uploadEvent);
+            var metaResult = (ImageUploadEvent)uploadResult[0];
 
-                image.ImageStream = @event.Stream;
-                image.Path = ticketResult.ServerPath;
+            if (metaResult.UKey != null)
+            {
+                var index = metaResult.MsgInfo.MsgInfoBody[0].Index;
+                var extend = new NTV2RichMediaHighwayExt
+                {
+                    FileUuid = index.FileUuid,
+                    UKey = metaResult.UKey,
+                    Network = Common.Convert(metaResult.Network),
+                    MsgInfoBody = metaResult.MsgInfo.MsgInfoBody,
+                    BlockSize = 1024 * 1024,
+                    Hash = new NTHighwayHash { FileSha1 = new List<byte[]> { index.Info.FileSha1.UnHex() } }
+                };
+                var extStream = extend.Serialize();
+
+                bool hwSuccess = await context.Highway.UploadSrcByStreamAsync(1003, image.ImageStream.Value, await Common.GetTicket(context), index.Info.FileHash.UnHex(), extStream.ToArray());
+                if (!hwSuccess)
+                {
+                    await image.ImageStream.Value.DisposeAsync();
+                    throw new Exception();
+                }
             }
+            
+            image.MsgInfo = metaResult.MsgInfo;  // directly constructed by Tencent's BDH Server
+            image.CompatImage = metaResult.Compat;  // for legacy QQ
+            await image.ImageStream.Value.DisposeAsync();
         }
     }
 
@@ -37,20 +50,35 @@ internal class ImageUploader : IHighwayUploader
     {
         if (entity is ImageEntity { ImageStream: not null } image)
         {
-            var @event = ImageGroupUploadEvent.Create(image.ImageStream, chain.GroupUin ?? throw new Exception());
-            var results = await context.Business.SendEvent(@event);
-            if (results.Count != 0)
-            {
-                var ticketResult = (ImageGroupUploadEvent)results[0];
-                if (!ticketResult.IsExist)
-                {
-                    bool hwSuccess = await context.Highway.UploadSrcByStreamAsync(2, image.ImageStream, ticketResult.Ticket, @event.FileMd5.UnHex());
-                    if (!hwSuccess) throw new Exception();
-                }
+            var uploadEvent = ImageGroupUploadEvent.Create(image, chain.GroupUin ?? 0);
+            var uploadResult = await context.Business.SendEvent(uploadEvent);
+            var metaResult = (ImageGroupUploadEvent)uploadResult[0];
 
-                image.ImageStream = @event.Stream;
-                image.FileId = ticketResult.FileId;
+            if (metaResult.UKey != null)
+            {
+                var index = metaResult.MsgInfo.MsgInfoBody[0].Index;
+                var extend = new NTV2RichMediaHighwayExt
+                {
+                    FileUuid = index.FileUuid,
+                    UKey = metaResult.UKey,
+                    Network = Common.Convert(metaResult.Network),
+                    MsgInfoBody = metaResult.MsgInfo.MsgInfoBody,
+                    BlockSize = 1024 * 1024,
+                    Hash = new NTHighwayHash { FileSha1 = new List<byte[]> { index.Info.FileSha1.UnHex() } }
+                };
+                var extStream = extend.Serialize();
+
+                bool hwSuccess = await context.Highway.UploadSrcByStreamAsync(1004, image.ImageStream.Value, await Common.GetTicket(context), index.Info.FileHash.UnHex(), extStream.ToArray());
+                if (!hwSuccess)
+                {
+                    await image.ImageStream.Value.DisposeAsync();
+                    throw new Exception();
+                }
             }
+            
+            image.MsgInfo = metaResult.MsgInfo;  // directly constructed by Tencent's BDH Server
+            image.CompatFace = metaResult.Compat;  // for legacy QQ
+            await image.ImageStream.Value.DisposeAsync();
         }
     }
 }

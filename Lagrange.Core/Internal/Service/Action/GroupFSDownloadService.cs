@@ -17,26 +17,26 @@ internal class GroupFSDownloadService : BaseService<GroupFSDownloadEvent>
     protected override bool Build(GroupFSDownloadEvent input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out BinaryPacket output, out List<BinaryPacket>? extraPackets)
     {
-        var packet = new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D6_2>(new OidbSvcTrpcTcp0x6D6_2
+        var packet = new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D6>(new OidbSvcTrpcTcp0x6D6
         {
-            Download = new OidbSvcTrpcTcp0x6D6_2Download
+            Download = new OidbSvcTrpcTcp0x6D6Download
             {
                 GroupUin = input.GroupUin,
                 AppId = 7,
                 BusId = 102,
                 FileId = input.FileId
             }
-        }, false, true);
+        }, 0x6D6, 2, false, true);
 
         output = packet.Serialize();
         extraPackets = null;
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out GroupFSDownloadEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var packet = Serializer.Deserialize<OidbSvcTrpcTcpResponse<OidbSvcTrpcTco0x6D6Response>>(input.AsSpan());
+        var packet = Serializer.Deserialize<OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D6Response>>(input);
         var download = packet.Body.Download;
 
         string url = $"https://{download.DownloadIp}:443/ftn_handler/{download.DownloadUrl.Hex(true)}/?fname=";

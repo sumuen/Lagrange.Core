@@ -3,21 +3,22 @@ using System.Text.Json.Nodes;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface.Api;
 using Lagrange.OneBot.Core.Entity.Action;
+using Lagrange.OneBot.Core.Operation.Converters;
 
 namespace Lagrange.OneBot.Core.Operation.Generic;
 
 [Operation("send_like")]
 public class SendLikeOperation : IOperation
 {
-    public async Task<OneBotResult> HandleOperation(BotContext context, JsonObject? payload)
+    public async Task<OneBotResult> HandleOperation(BotContext context, JsonNode? payload)
     {
-        if (payload.Deserialize<OneBotSendLike>() is { } like)
+        if (payload.Deserialize<OneBotSendLike>(SerializerOptions.DefaultOptions) is { } like)
         {
-            return await context.Like(like.UserId) // the times is ignored to simulate the real user behaviour
-                ? new OneBotResult(null, 200, "ok")
-                : new OneBotResult(null, 200, "user not found in the buffer");
+            return await context.Like(like.UserId, like.Times ?? 1) // the times is ignored to simulate the real user behaviour
+                ? new OneBotResult(null, 0, "ok")
+                : new OneBotResult(null, 0, "user not found in the buffer");
         }
-        
+
         throw new Exception();
     }
 }

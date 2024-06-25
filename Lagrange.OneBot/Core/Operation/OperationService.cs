@@ -2,7 +2,9 @@ using System.Reflection;
 using Lagrange.Core;
 using Lagrange.OneBot.Core.Entity.Action;
 using Lagrange.OneBot.Core.Network;
-using Lagrange.OneBot.Database;
+using Lagrange.OneBot.Core.Notify;
+using Lagrange.OneBot.Core.Operation.Message;
+using Lagrange.OneBot.Message;
 using LiteDB;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,7 +19,7 @@ public sealed class OperationService
     private readonly Dictionary<string, Type> _operations;
     private readonly ServiceProvider _service;
 
-    public OperationService(BotContext bot, ILogger<OperationService> logger, LiteDatabase context)
+    public OperationService(BotContext bot, ILogger<OperationService> logger, LiteDatabase context, MessageService message)
     {
         _bot = bot;
         _logger = logger;
@@ -25,13 +27,18 @@ public sealed class OperationService
         _operations = new Dictionary<string, Type>();
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
         {
-            var attribute = type.GetCustomAttribute<OperationAttribute>();
-            if (attribute != null) _operations[attribute.Api] = type;
+            var attributes = type.GetCustomAttributes<OperationAttribute>();
+            foreach (var attribute in attributes) _operations[attribute.Api] = type;
         }
 
         var service = new ServiceCollection();
+        service.AddSingleton(bot);
         service.AddSingleton(context);
         service.AddSingleton(logger);
+        service.AddSingleton(message);
+        service.AddSingleton<MessageCommon>();
+        service.AddSingleton<TicketService>();
+        service.AddLogging();
 
         foreach (var (_, type) in _operations) service.AddScoped(type);
         _service = service.BuildServiceProvider();

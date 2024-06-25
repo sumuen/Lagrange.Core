@@ -10,7 +10,7 @@ internal class Ptt
     
     [ProtoMember(2)] public long SrcUin { get; set; }
     
-    [ProtoMember(3)] public byte[] FileUuid { get; set; }
+    [ProtoMember(3)] public string FileUuid { get; set; }
     
     [ProtoMember(4)] public byte[] FileMd5 { get; set; }
     
@@ -40,7 +40,7 @@ internal class Ptt
     
     [ProtoMember(17)] public byte[] PttUrl { get; set; }
     
-    [ProtoMember(18)] public byte[] GroupFileKey { get; set; }
+    [ProtoMember(18)] public string GroupFileKey { get; set; }
     
     [ProtoMember(19)] public int Time { get; set; }
     

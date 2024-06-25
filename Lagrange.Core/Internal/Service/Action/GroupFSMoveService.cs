@@ -16,9 +16,9 @@ internal class GroupFSMoveService : BaseService<GroupFSMoveEvent>
     protected override bool Build(GroupFSMoveEvent input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out BinaryPacket output, out List<BinaryPacket>? extraPackets)
     {
-        var packet = new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D6_5>(new OidbSvcTrpcTcp0x6D6_5
+        var packet = new OidbSvcTrpcTcpBase<OidbSvcTrpcTcp0x6D6>(new OidbSvcTrpcTcp0x6D6
         {
-            Move = new OidbSvcTrpcTcp0x6D6_5Move
+            Move = new OidbSvcTrpcTcp0x6D6Move
             {
                 GroupUin = input.GroupUin,
                 AppId = 7,
@@ -27,17 +27,17 @@ internal class GroupFSMoveService : BaseService<GroupFSMoveEvent>
                 ParentDirectory = input.ParentDirectory,
                 TargetDirectory = input.TargetDirectory
             }
-        }, false, true);
+        }, 0x6D6, 5, false, true);
 
         output = packet.Serialize();
         extraPackets = null;
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, out GroupFSMoveEvent output,
-        out List<ProtocolEvent>? extraEvents)
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, 
+        out GroupFSMoveEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var packet = Serializer.Deserialize<OidbSvcTrpcTcpResponse<byte[]>>(input.AsSpan());
+        var packet = Serializer.Deserialize<OidbSvcTrpcTcpBase<byte[]>>(input);
         
         output = GroupFSMoveEvent.Result((int)packet.ErrorCode);
         extraEvents = null;

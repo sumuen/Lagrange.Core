@@ -39,10 +39,10 @@ internal class HighwayUrlService : BaseService<HighwayUrlEvent>
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out HighwayUrlEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var packet = Serializer.Deserialize<HttpConn0x6ff_501Response>(input.AsSpan());
+        var packet = Serializer.Deserialize<HttpConn0x6ff_501Response>(input);
         
         var servers = new Dictionary<uint, List<Uri>>();
         foreach (var serverInfo in packet.HttpConn.ServerInfos)
@@ -53,7 +53,7 @@ internal class HighwayUrlService : BaseService<HighwayUrlEvent>
             foreach (var serverAddr in serverInfo.ServerAddrs)
             {
                 var ip = BitConverter.GetBytes(serverAddr.Ip);
-                servers[type].Add(new Uri($"https://{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}:{serverAddr.Port}/cgi-bin/httpconn?htcmd=0x6FF0087&uin={keystore.Uin}"));
+                servers[type].Add(new Uri($"http://{ip[0]}.{ip[1]}.{ip[2]}.{ip[3]}:{serverAddr.Port}/cgi-bin/httpconn?htcmd=0x6FF0087&uin={keystore.Uin}"));
             }
         }
         

@@ -68,9 +68,11 @@ public class BotKeystore
     [Serializable]
     public class WtLoginSession
     {
-        internal byte[] D2Key { get; set; } = new byte[16];
-        internal byte[] D2 { get; set; } = Array.Empty<byte>();
-        internal byte[] Tgt { get; set; } = Array.Empty<byte>();
+        public byte[] D2Key { get; set; } = new byte[16];
+        public byte[] D2 { get; set; } = Array.Empty<byte>();
+        public byte[] Tgt { get; set; } = Array.Empty<byte>();
+        
+        public DateTime SessionDate { get; set; }
 
         internal byte[]? QrSign { get; set; } // size: 24
         internal string? QrString { get; set; }
@@ -81,6 +83,7 @@ public class BotKeystore
         internal byte[]? UnusualSign { get; set; }
         internal string? UnusualCookies { get; set; }
         internal string? CaptchaUrl { get; set; }
+        internal string? NewDeviceVerifyUrl { get; set; }
         internal (string, string, string)? Captcha { get; set; }
         
         public byte[]? TempPassword { get; set; }
@@ -117,5 +120,12 @@ public class BotKeystore
         public string Name { get; set; }
 
         public override string ToString() => $"Bot name: {Name} | Gender: {Gender} | Age: {Age}";
+    }
+
+    internal void ClearSession()
+    {
+        Session.D2 = Array.Empty<byte>();
+        Session.Tgt = Array.Empty<byte>(); 
+        Session.D2Key = new byte[16];
     }
 }

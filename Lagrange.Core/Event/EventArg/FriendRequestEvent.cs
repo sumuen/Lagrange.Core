@@ -4,16 +4,19 @@ public class FriendRequestEvent : EventBase
 {
     public uint SourceUin { get; }
     
-    public string Name { get; }
+    internal string SourceUid { get; }
+    
+    public string Source { get; }
     
     public string Message { get; }
     
-    internal FriendRequestEvent(uint sourceUin, string name, string message)
+    internal FriendRequestEvent(uint sourceUin, string sourceUid, string message, string source)
     {
         SourceUin = sourceUin;
-        Name = name;
+        SourceUid = sourceUid;
         Message = message;
+        Source = source;
         
-        EventMessage = $"[{nameof(FriendRequestEvent)}]: {SourceUin}:{Name} {Message}";
+        EventMessage = $"[{nameof(FriendRequestEvent)}]: {SourceUin}:{Source} {Message}";
     }
 }

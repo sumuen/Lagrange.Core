@@ -21,20 +21,16 @@ internal class Login : WtLoginBase
     public Login(BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device)
         : base(PacketCommand, WtLoginCommand, keystore, appInfo, device) { }
 
-    protected override BinaryPacket ConstructBody()
-    {
-        var packet = new BinaryPacket()
-            .WriteUshort(InternalCommand, false)
-            .WritePacket(TlvPacker.Pack(ConstructTlvs));
-        
-        return packet;
-    }
+    protected override BinaryPacket ConstructData() => new BinaryPacket()
+        .WriteUshort(InternalCommand)
+        .WritePacket(TlvPacker.Pack(ConstructTlvs));
+    
 
     public static Dictionary<ushort, TlvBody> Deserialize(BinaryPacket packet, BotKeystore keystore, out State state)
     {
         packet = DeserializePacket(keystore, packet);
         
-        ushort command = packet.ReadUshort(false);
+        ushort command = packet.ReadUshort();
         if (command != InternalCommand) throw new Exception("Invalid command");
         
         state = (State)packet.ReadByte();

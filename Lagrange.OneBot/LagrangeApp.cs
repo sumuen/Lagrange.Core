@@ -2,17 +2,20 @@ using System.Text;
 using System.Text.Json;
 using Lagrange.Core;
 using Lagrange.Core.Common.Interface.Api;
+using Lagrange.Core.Event.EventArg;
 using Lagrange.Core.Utility.Extension;
 using Lagrange.Core.Utility.Sign;
-using Lagrange.OneBot.Core.Message;
 using Lagrange.OneBot.Core.Network;
 using Lagrange.OneBot.Core.Notify;
 using Lagrange.OneBot.Core.Operation;
+using Lagrange.OneBot.Message;
 using Lagrange.OneBot.Utility;
+using LiteDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 using LogLevel = Lagrange.Core.Event.EventArg.LogLevel;
 
 namespace Lagrange.OneBot;
@@ -40,6 +43,7 @@ public class LagrangeApp : IHost
         _hostApp = host;
         Logger = Services.GetRequiredService<ILogger<LagrangeApp>>();
 
+        Services.GetRequiredService<MusicSigner>();
         MessageService = Services.GetRequiredService<MessageService>();
         OperationService = Services.GetRequiredService<OperationService>();
     }
@@ -66,6 +70,8 @@ public class LagrangeApp : IHost
 
         Instance.Invoker.OnBotOnlineEvent += async (_, args) =>
         {
+            if (args.Reason == BotOnlineEvent.OnlineReason.Reconnect) return;
+            
             var keystore = Instance.UpdateKeystore();
             Logger.LogInformation($"Bot Online: {keystore.Uin}");
             string json = JsonSerializer.Serialize(keystore, new JsonSerializerOptions { WriteIndented = true });
@@ -84,10 +90,10 @@ public class LagrangeApp : IHost
 
             if (await Instance.FetchQrCode() is { } qrCode)
             {
-                QrCodeHelper.Output(qrCode.Url ?? "");
+                QrCodeHelper.Output(qrCode.Url ?? "", Configuration.GetValue<bool>("QrCode:ConsoleCompatibilityMode"));
                 await File.WriteAllBytesAsync($"qr-{Instance.BotUin}.png", qrCode.QrCode ?? Array.Empty<byte>(), cancellationToken);
                 
-                await Instance.LoginByQrCode();
+                _ = Task.Run(Instance.LoginByQrCode, cancellationToken);
             }
         }
         else
@@ -105,8 +111,8 @@ public class LagrangeApp : IHost
                     if (ticket != null && randomString != null) Instance.SubmitCaptcha(ticket, randomString);
                 }, cancellationToken);
             };
-            
-            await Instance.LoginByPassword();
+
+            _ = Task.Run(Instance.LoginByPassword, cancellationToken);
         }
     }
 
@@ -115,7 +121,8 @@ public class LagrangeApp : IHost
         Logger.LogInformation("Lagrange.OneBot Implementation has stopped");
         
         Instance.Dispose();
-        
+
+        Services.GetRequiredService<LiteDatabase>().Dispose();
         await WebService.StopAsync(cancellationToken);
         await _hostApp.StopAsync(cancellationToken);
     }

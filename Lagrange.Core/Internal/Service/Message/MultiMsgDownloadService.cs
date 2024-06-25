@@ -39,14 +39,14 @@ internal class MultiMsgDownloadService : BaseService<MultiMsgDownloadEvent>
         return true;
     }
 
-    protected override bool Parse(byte[] input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
+    protected override bool Parse(Span<byte> input, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device,
         out MultiMsgDownloadEvent output, out List<ProtocolEvent>? extraEvents)
     {
-        var packet = Serializer.Deserialize<RecvLongMsgResp>(input.AsSpan());
+        var packet = Serializer.Deserialize<RecvLongMsgResp>(input);
         var inflate = GZip.Inflate(packet.Result.Payload);
         var result = Serializer.Deserialize<LongMsgResult>(inflate.AsSpan());
 
-        output = MultiMsgDownloadEvent.Result(0, result.Action.ActionData.MsgBody.Select(MessagePacker.Parse).ToList());
+        output = MultiMsgDownloadEvent.Result(0, result.Action.ActionData.MsgBody.Select(x => MessagePacker.Parse(x, true)).ToList());
         extraEvents = null;
         return true;
     }

@@ -1,9 +1,11 @@
 using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Internal.Context.Attributes;
+using Lagrange.Core.Internal.Context.Uploader;
 using Lagrange.Core.Internal.Event.Action;
 using Lagrange.Core.Internal.Event.Message;
 using Lagrange.Core.Internal.Event.System;
 using Lagrange.Core.Message;
+using Lagrange.Core.Message.Entity;
 
 namespace Lagrange.Core.Internal.Context.Logic.Implementation;
 
@@ -27,12 +29,8 @@ internal class OperationLogic : LogicBase
     public Task<List<BotGroupMember>> FetchMembers(uint groupUin, bool refreshCache = false) => 
             Collection.Business.CachingLogic.GetCachedMembers(groupUin, refreshCache);
     
-    public async Task<List<BotGroup>> FetchGroups(bool refreshCache)
-    {
-        if (refreshCache) await Collection.Business.PushEvent(InfoSyncEvent.Create());
-
-        return await Collection.Business.CachingLogic.GetCachedGroups();
-    }
+    public Task<List<BotGroup>> FetchGroups(bool refreshCache) =>
+        Collection.Business.CachingLogic.GetCachedGroups(refreshCache);
 
     public async Task<MessageResult> SendMessage(MessageChain chain)
     {
@@ -144,6 +142,47 @@ internal class OperationLogic : LogicBase
         return events.Count != 0 && ((GroupFSMoveEvent)events[0]).ResultCode == 0;
     }
     
+    public async Task<bool> GroupFSDelete(uint groupUin, string fileId)
+    {
+        var groupFSDeleteEvent = GroupFSDeleteEvent.Create(groupUin, fileId);
+        var events = await Collection.Business.SendEvent(groupFSDeleteEvent); 
+        return events.Count != 0 && ((GroupFSDeleteEvent)events[0]).ResultCode == 0;
+    }
+    
+    public async Task<bool> GroupFSCreateFolder(uint groupUin, string name)
+    {
+        var groupFSCreateFolderEvent = GroupFSCreateFolderEvent.Create(groupUin, name);
+        var events = await Collection.Business.SendEvent(groupFSCreateFolderEvent); 
+        return events.Count != 0 && ((GroupFSCreateFolderEvent)events[0]).ResultCode == 0;
+    }
+    
+    public Task<bool> GroupFSUpload(uint groupUin, FileEntity fileEntity, string targetDirectory)
+    {
+        try
+        {
+            return FileUploader.UploadGroup(Collection, MessageBuilder.Group(groupUin).Build(), fileEntity, targetDirectory);
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
+    }
+    
+    public async Task<bool> UploadFriendFile(uint targetUin, FileEntity fileEntity)
+    {
+        string? uid = await Collection.Business.CachingLogic.ResolveUid(null, targetUin);
+        var chain = new MessageChain(targetUin, Collection.Keystore.Uid ?? "", uid ?? "") { fileEntity };
+        
+        try
+        {
+            return await FileUploader.UploadPrivate(Collection, chain, fileEntity);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
     public async Task<bool> RecallGroupMessage(uint groupUin, MessageResult result)
     {
         if (result.Sequence == null) return false;
@@ -162,20 +201,21 @@ internal class OperationLogic : LogicBase
         return events.Count != 0 && ((RecallGroupMessageEvent)events[0]).ResultCode == 0;
     }
 
-    public async Task<List<BotGroupRequest>?> FetchRequests()
+    public async Task<List<BotGroupRequest>?> FetchGroupRequests()
     {
-        var fetchRequestsEvent = FetchRequestsEvent.Create();
+        var fetchRequestsEvent = FetchGroupRequestsEvent.Create();
         var events = await Collection.Business.SendEvent(fetchRequestsEvent);
         if (events.Count == 0) return null;
 
-        var resolved = ((FetchRequestsEvent)events[0]).Events;
+        var resolved = ((FetchGroupRequestsEvent)events[0]).Events;
         var results = new List<BotGroupRequest>();
 
         foreach (var result in resolved)
         {
-            uint invitorUin = await ResolveUid(result.InvitorMemberUid);
-            uint targetUin = await ResolveUid(result.TargetMemberUid);
-            uint operatorUin = await ResolveUid(result.OperatorUid);
+            var uins = await Task.WhenAll(ResolveUid(result.InvitorMemberUid), ResolveUid(result.TargetMemberUid), ResolveUid(result.OperatorUid));
+            uint invitorUin = uins[0];
+            uint targetUin = uins[1];
+            uint operatorUin = uins[2];
             
             results.Add(new BotGroupRequest(
                 result.GroupUin,
@@ -186,7 +226,9 @@ internal class OperationLogic : LogicBase
                 operatorUin,
                 result.OperatorName,
                 result.State,
-                result.Sequence));
+                result.Sequence,
+                result.EventType,
+                result.Comment));
         }
 
         return results;
@@ -195,10 +237,19 @@ internal class OperationLogic : LogicBase
         {
             if (uid == null) return 0;
             
-            var fetchUidEvent = FetchAvatarEvent.Create(uid);
+            var fetchUidEvent = FetchUserInfoEvent.Create(uid);
             var e = await Collection.Business.SendEvent(fetchUidEvent);
-            return e.Count == 0 ? 0 : ((FetchAvatarEvent)e[0]).Uin;
+            return e.Count == 0 ? 0 : ((FetchUserInfoEvent)e[0]).UserInfo.Uin;
         }
+    }
+
+    public async Task<List<dynamic>?> FetchFriendRequests()
+    {
+        var fetchRequestsEvent = FetchFriendRequestsEvent.Create();
+        var events = await Collection.Business.SendEvent(fetchRequestsEvent);
+        if (events.Count == 0) return null;
+
+        return null;
     }
 
     public async Task<bool> GroupTransfer(uint groupUin, uint targetUin)
@@ -211,7 +262,21 @@ internal class OperationLogic : LogicBase
         return results.Count != 0 && results[0].ResultCode == 0;
     }
 
-    public async Task<bool> RequestFriend(uint targetUin, string message, string question)
+    public async Task<bool> SetStatus(uint status)
+    {
+        var setStatusEvent = SetStatusEvent.Create(status, 0);
+        var results = await Collection.Business.SendEvent(setStatusEvent);
+        return results.Count != 0 && results[0].ResultCode == 0;
+    }
+
+    public async Task<bool> SetCustomStatus(uint faceId, string text)
+    {
+        var setCustomStatusEvent = SetCustomStatusEvent.Create(faceId, text);
+        var results = await Collection.Business.SendEvent(setCustomStatusEvent);
+        return results.Count != 0 && results[0].ResultCode == 0;
+    }
+
+    public async Task<bool> RequestFriend(uint targetUin, string question, string message)
     {
         var requestFriendSearchEvent = RequestFriendSearchEvent.Create(targetUin);
         var searchEvents = await Collection.Business.SendEvent(requestFriendSearchEvent);
@@ -227,26 +292,26 @@ internal class OperationLogic : LogicBase
         return events.Count != 0 && ((RequestFriendEvent)events[0]).ResultCode == 0;
     }
 
-    public async Task<bool> Like(uint targetUin)
+    public async Task<bool> Like(uint targetUin, uint count)
     {
         var uid = await Collection.Business.CachingLogic.ResolveUid(null, targetUin);
         if (uid == null) return false;
 
-        var friendLikeEvent = FriendLikeEvent.Create(uid);
+        var friendLikeEvent = FriendLikeEvent.Create(uid, count);
         var results = await Collection.Business.SendEvent(friendLikeEvent);
         return results.Count != 0 && results[0].ResultCode == 0;
     }
 
-    public async Task<bool> InviteGroup(uint groupUin, List<uint> invitedUins)
+    public async Task<bool> InviteGroup(uint targetGroupUin, Dictionary<uint, uint?> invitedUins)
     {
-        var invitedUids = new List<string>(invitedUins.Count);
-        foreach (uint uin in invitedUins)
+        var invitedUids = new Dictionary<string, uint?>(invitedUins.Count);
+        foreach (var (friendUin, groupUin) in invitedUins)
         {
-            string? uid = await Collection.Business.CachingLogic.ResolveUid(null, uin);
-            if (uid != null) invitedUids.Add(uid);
+            string? uid = await Collection.Business.CachingLogic.ResolveUid(groupUin, friendUin);
+            if (uid != null) invitedUids[uid] = groupUin;
         }
 
-        var @event = GroupInviteEvent.Create(groupUin, invitedUids);
+        var @event = GroupInviteEvent.Create(targetGroupUin, invitedUids);
         var results = await Collection.Business.SendEvent(@event);
         return results.Count != 0 && results[0].ResultCode == 0;
     }
@@ -258,10 +323,116 @@ internal class OperationLogic : LogicBase
         return events.Count == 0 ? null : ((FetchClientKeyEvent)events[0]).ClientKey;
     }
 
-    public async Task<bool> GroupInvitationRequest(uint groupUin, ulong sequence, bool accept)
+    public async Task<bool> SetGroupRequest(uint groupUin, ulong sequence, uint type, bool accept)
     {
-        var inviteEvent = AcceptGroupRequestEvent.Create(accept, groupUin, sequence);
+        var inviteEvent = SetGroupRequestEvent.Create(accept, groupUin, sequence, type);
         var results = await Collection.Business.SendEvent(inviteEvent);
+        return results.Count != 0 && results[0].ResultCode == 0;
+    }
+    
+    public async Task<bool> SetFriendRequest(string targetUid, bool accept)
+    {
+        var inviteEvent = SetFriendRequestEvent.Create(targetUid, accept);
+        var results = await Collection.Business.SendEvent(inviteEvent);
+        return results.Count != 0 && results[0].ResultCode == 0;
+    }
+    
+    public async Task<List<MessageChain>?> GetGroupMessage(uint groupUin, uint startSequence, uint endSequence)
+    {
+        var getMsgEvent = GetGroupMessageEvent.Create(groupUin, startSequence, endSequence);
+        var results = await Collection.Business.SendEvent(getMsgEvent);
+        return results.Count != 0 ? ((GetGroupMessageEvent)results[0]).Chains : null;
+    }
+    
+    public async Task<List<MessageChain>?> GetRoamMessage(uint friendUin, uint time, uint count)
+    {
+        if (await Collection.Business.CachingLogic.ResolveUid(null, friendUin) is not { } uid) return null;
+
+        var roamEvent = GetRoamMessageEvent.Create(uid, time, count); 
+        var results = await Collection.Business.SendEvent(roamEvent);
+        return results.Count != 0 ? ((GetRoamMessageEvent)results[0]).Chains : null;
+    }
+    
+    public async Task<List<string>?> FetchCustomFace()
+    {
+        var fetchCustomFaceEvent = FetchCustomFaceEvent.Create();
+        var results = await Collection.Business.SendEvent(fetchCustomFaceEvent);
+        return results.Count != 0 ? ((FetchCustomFaceEvent)results[0]).Urls : null;
+    }
+    
+    public async Task<string?> UploadLongMessage(List<MessageChain> chains)
+    {
+        var multiMsgUploadEvent = MultiMsgUploadEvent.Create(null, chains);
+        var results = await Collection.Business.SendEvent(multiMsgUploadEvent);
+        return results.Count != 0 ? ((MultiMsgUploadEvent)results[0]).ResId : null;
+    }
+
+    public async Task<bool> MarkAsRead(uint groupUin, string? targetUid, uint startSequence, uint time)
+    {
+        var markAsReadEvent = MarkReadedEvent.Create(groupUin, targetUid, startSequence, time);
+        var results = await Collection.Business.SendEvent(markAsReadEvent);
+        return results.Count != 0 && ((MarkReadedEvent)results[0]).ResultCode == 0;
+    }
+
+    public async Task<bool> FriendPoke(uint friendUin)
+    {
+        var friendPokeEvent = FriendPokeEvent.Create(friendUin);
+        var results = await Collection.Business.SendEvent(friendPokeEvent);
+        return results.Count != 0 && ((FriendPokeEvent)results[0]).ResultCode == 0;
+    }
+    
+    public async Task<bool> GroupPoke(uint groupUin, uint friendUin)
+    {
+        var friendPokeEvent = GroupPokeEvent.Create(friendUin, groupUin);
+        var results = await Collection.Business.SendEvent(friendPokeEvent);
+        return results.Count != 0 && ((FriendPokeEvent)results[0]).ResultCode == 0;
+    }
+
+    public async Task<bool> SetEssenceMessage(uint groupUin, uint sequence, uint random)
+    {
+        var setEssenceMessageEvent = SetEssenceMessageEvent.Create(groupUin, sequence, random);
+        var results = await Collection.Business.SendEvent(setEssenceMessageEvent);
+        return results.Count != 0 && ((SetEssenceMessageEvent)results[0]).ResultCode == 0;
+    }
+    
+    public async Task<bool> RemoveEssenceMessage(uint groupUin, uint sequence, uint random)
+    {
+        var removeEssenceMessageEvent = RemoveEssenceMessageEvent.Create(groupUin, sequence, random);
+        var results = await Collection.Business.SendEvent(removeEssenceMessageEvent);
+        return results.Count != 0 && ((RemoveEssenceMessageEvent)results[0]).ResultCode == 0;
+    }
+    
+    public async Task<bool> GroupSetSpecialTitle(uint groupUin, uint targetUin, string title)
+    {
+        string? uid = await Collection.Business.CachingLogic.ResolveUid(groupUin, targetUin);
+        if (uid == null) return false;
+
+        var groupSetSpecialTitleEvent = GroupSetSpecialTitleEvent.Create(groupUin, uid, title);
+        var events = await Collection.Business.SendEvent(groupSetSpecialTitleEvent);
+        return events.Count != 0 && ((GroupSetSpecialTitleEvent)events[0]).ResultCode == 0;
+    }
+
+    public async Task<BotUserInfo?> FetchUserInfo(uint uin)
+    {
+        string? uid = await Collection.Business.CachingLogic.ResolveUid(null, uin);
+        if (uid == null) return null;
+        
+        var fetchUserInfoEvent = FetchUserInfoEvent.Create(uid);
+        var events = await Collection.Business.SendEvent(fetchUserInfoEvent);
+        return events.Count != 0 ? ((FetchUserInfoEvent)events[0]).UserInfo : null;
+    }
+    
+    public async Task<bool> SetMessageReaction(uint groupUin, uint sequence, string code)
+    {
+        var setReactionEvent = GroupSetReactionEvent.Create(groupUin, sequence, code);
+        var results = await Collection.Business.SendEvent(setReactionEvent);
+        return results.Count != 0 && results[0].ResultCode == 0;
+    }
+    
+    public async Task<bool> SetNeedToConfirmSwitch(bool enableNoNeed)
+    {
+        var setNeedToConfirmSwitchEvent = SetNeedToConfirmSwitchEvent.Create(enableNoNeed);
+        var results = await Collection.Business.SendEvent(setNeedToConfirmSwitchEvent);
         return results.Count != 0 && results[0].ResultCode == 0;
     }
 }

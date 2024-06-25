@@ -1,5 +1,6 @@
 using ProtoBuf;
 using System.Reflection;
+using Lagrange.Core.Common.Entity;
 using Lagrange.Core.Message.Entity;
 using Lagrange.Core.Utility.Extension;
 using Lagrange.Core.Utility.Generator;
@@ -60,54 +61,71 @@ internal static class MessagePacker
         foreach (var entity in chain)
         {
             entity.SetSelfUid(selfUid);
-            
+            message.Body?.RichText?.Elems.AddRange(entity.PackElement());
+
             if (message.Body != null)
             {
-                message.Body.RichText?.Elems.AddRange(entity.PackElement());
-                
                 if (entity.PackMessageContent() is not { } content) continue;
                 if (message.Body.MsgContent is not null) throw new InvalidOperationException("Message content is not null, conflicting with the message entity.");
-                    
+
                 using var stream = new MemoryStream();
                 Serializer.Serialize(stream, content);
                 message.Body.MsgContent = stream.ToArray();
             }
         }
+        
+        BuildAdditional(chain, message);
 
         return message;
     }
     
     public static PushMsgBody BuildFake(MessageChain chain, string selfUid)
     {
-        var message = BuildFakePacketBase(chain);
+        var message = BuildFakePacketBase(chain, selfUid);
 
         foreach (var entity in chain)
         {
             entity.SetSelfUid(selfUid);
+            message.Body?.RichText?.Elems.AddRange(entity.PackElement());
             
             if (message.Body != null)
             {
-                message.Body.RichText?.Elems.AddRange(entity.PackElement());
-
                 if (entity.PackMessageContent() is not { } content) continue;
                 if (message.Body.MsgContent is not null) throw new InvalidOperationException("Message content is not null, conflicting with the message entity.");
-                    
+
                 using var stream = new MemoryStream();
                 Serializer.Serialize(stream, content);
                 message.Body.MsgContent = stream.ToArray();
             }
         }
-
         return message;
     }
-    
-    public static MessageChain Parse(PushMsgBody message)
-    {
-        var chain = ParseChain(message);
 
-        if (message.Body?.RichText?.Elems != null) // 怎么Body还能是null的
+    private static void BuildAdditional(MessageChain chain, Internal.Packets.Message.Message message)
+    {
+        if (message.Body?.RichText == null) return;
+        
+        foreach (var entity in chain)
         {
-            foreach (var element in message.Body.RichText.Elems)
+            switch (entity)
+            {
+                case RecordEntity { Compat: { } compat }:  // Append Tag 04 -> Ptt
+                {
+                    message.Body.RichText.Ptt = compat.Ptt;
+                    message.Body.RichText.Elems.AddRange(compat.Elems);
+                    break;
+                }
+            }
+        }
+    }
+    
+    public static MessageChain Parse(PushMsgBody message, bool isFake = false)
+    {
+        var chain = isFake ? ParseFakeChain(message) : ParseChain(message);
+
+        if (message.Body?.RichText is { Elems: { } elements}) // 怎么Body还能是null的
+        {
+            foreach (var element in elements)
             {
                 foreach (var (entityType, expectElems) in EntityToElem)
                 {
@@ -122,6 +140,17 @@ internal static class MessagePacker
                     }
                 }
             }
+        }
+
+        switch (message.Body?.RichText?.Ptt)
+        {
+            case { } groupPtt when chain.IsGroup && groupPtt.FileId != 0:  //  for legacy ptt
+                chain.Add(new RecordEntity(groupPtt.GroupFileKey, groupPtt.FileName));
+                break;
+            case { } privatePtt when !chain.IsGroup: 
+                if (chain.OfType<RecordEntity>().FirstOrDefault(x => x.AudioName == privatePtt.FileName) == null) 
+                    chain.Add(new RecordEntity(privatePtt.FileUuid, privatePtt.FileName));
+                break;
         }
 
         return chain;
@@ -149,7 +178,7 @@ internal static class MessagePacker
     {
         RoutingHead = new RoutingHead
         {
-            C2C = chain.IsGroup ? null : new C2C
+            C2C = chain.IsGroup || chain.HasTypeOf<FileEntity>() ? null : new C2C
             {
                 Uid = chain.FriendInfo?.Uid,
                 Uin = chain.FriendUin
@@ -172,32 +201,32 @@ internal static class MessagePacker
         },
         Body = new MessageBody { RichText = new RichText { Elems = new List<Elem>() } },
         Seq = (uint)Random.Shared.Next(1000000, 9999999), // 草泥马开摆！
-        Rand = (uint)Random.Shared.Next(100000000, int.MaxValue),
+        Rand = (uint)(chain.MessageId & uint.MaxValue),
         Ctrl = chain.IsGroup ? null : new MessageControl { MsgFlag = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds() }
     };
 
-    private static PushMsgBody BuildFakePacketBase(MessageChain chain) => new()
+    private static PushMsgBody BuildFakePacketBase(MessageChain chain, string selfUid) => new()
     {
         ResponseHead = new ResponseHead
         {
-            FromUid = chain.SelfUid,
-            ToUid = chain.Uid,
+            FromUid = chain.Uid,
+            ToUid = chain.IsGroup ? null : selfUid,
             Grp = !chain.IsGroup ? null : new ResponseGrp // for consistency of code so inverted condition
             {
                 GroupUin = chain.GroupUin ?? 0,
                 MemberName = chain.GroupMemberInfo?.MemberCard ?? ""
             },
-            Forward = new ResponseForward
+            Forward = chain.IsGroup ? null : new ResponseForward
             {
                 FriendName = chain.FriendInfo?.Nickname
             }
         },
         ContentHead = new ContentHead
         {
-            Type = (uint)(chain.IsGroup ? 82 : 529),
+            Type = (uint)(chain.IsGroup ? 82 : 9),
             SubType = chain.IsGroup ? null : 4,
             DivSeq = chain.IsGroup ? null : 4,
-            MsgId = (uint)Random.Shared.Next(100000000, int.MaxValue),
+            MsgId = (uint)(chain.MessageId & 0xFFFFFFFF),
             Sequence = (uint?)Random.Shared.Next(1000000, 9999999),
             Timestamp = (uint)DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             Field7 = 1,
@@ -205,9 +234,11 @@ internal static class MessagePacker
             Field9 = 0,
             Forward = new ForwardHead
             {
-                Field3 = chain.IsGroup ? null : 2,
-                UnknownBase64 = Convert.ToBase64String(ByteGen.GenRandomBytes(32)),
-                Avatar = $"https://q1.qlogo.cn/g?b=qq&nk={chain.GroupMemberInfo?.Uin ?? chain.FriendInfo?.Uin}&s=640"
+                Field1 = 0,
+                Field2 = 0,
+                Field3 = chain.IsGroup ? 0u : 2u,
+                UnknownBase64 = string.Empty,
+                Avatar = string.Empty
             }
         },
         Body = new MessageBody { RichText = new RichText { Elems = new List<Elem>() } }
@@ -220,17 +251,43 @@ internal static class MessagePacker
                 message.ResponseHead.FromUin,
                 message.ResponseHead.ToUid ?? string.Empty , 
                 message.ResponseHead.FromUid ?? string.Empty, 
+                message.ResponseHead.ToUin,
                 message.ContentHead.Sequence ?? 0,
-                message.ContentHead.NewId ?? 0)
+                message.ContentHead.NewId ?? 0,
+                message.ContentHead.Type == 141 ? MessageChain.MessageType.Temp : MessageChain.MessageType.Friend)
             
             : new MessageChain(
                 message.ResponseHead.Grp.GroupUin, 
                 message.ResponseHead.FromUin, 
-                (uint)(message.ContentHead.Sequence ?? 0),
+                message.ContentHead.Sequence ?? 0,
                 message.ContentHead.NewId ?? 0);
+
+        if (message.Body?.RichText?.Elems is { } elems) chain.Elements.AddRange(elems);
 
         chain.Time = DateTimeOffset.FromUnixTimeSeconds(message.ContentHead.Timestamp ?? 0).DateTime;
         
         return chain;
     }
+
+    private static MessageChain ParseFakeChain(PushMsgBody message)
+    {
+        var @base = ParseChain(message);
+
+        if (@base.IsGroup && message.ResponseHead.Grp != null)
+        {
+            @base.GroupMemberInfo = new BotGroupMember
+            {
+                MemberCard = message.ResponseHead.Grp.MemberName,
+                MemberName = message.ResponseHead.Grp.MemberName,
+                Uid = message.ResponseHead.FromUid ?? string.Empty
+            };
+        }
+        else
+        {
+            @base.FriendInfo = new BotFriend(0, message.ResponseHead.FromUid ?? string.Empty, message.ResponseHead.Forward?.FriendName ?? string.Empty, string.Empty, string.Empty);
+        }
+        
+        return @base;
+    }
+
 }

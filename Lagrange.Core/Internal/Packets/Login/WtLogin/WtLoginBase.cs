@@ -26,46 +26,44 @@ internal abstract class WtLoginBase
     
     public BinaryPacket ConstructPacket()
     {
-        var body = ConstructBody();
+        var body = ConstructData();
         var encrypt = Keystore.SecpImpl.Encrypt(body.ToArray());
         
-        var packet = new BinaryPacket().WriteByte(2); // packet start
+        var packet = new BinaryPacket()
+            .WriteByte(2) // packet start
+            .Barrier(w => w
+                .WriteUshort(8001) // ver
+                .WriteUshort(Cmd) // cmd: wtlogin.trans_emp: 2066, wtlogin.login: 2064
+                .WriteUshort(Keystore.Session.Sequence) // unique wtLoginSequence for wtlogin packets only, should be stored in KeyStore
+                .WriteUint(Keystore.Uin) // uin, 0 for wtlogin.trans_emp
+                .WriteByte(3) // extVer
+                .WriteByte(135) // cmdVer
+                .WriteUint(0) // actually unknown const 0
+                .WriteByte(19) // pubId
+                .WriteUshort(0) // insId
+                .WriteUshort(AppInfo.AppClientVersion) // cliType
+                .WriteUint(0) // retryTime
+                .WritePacket(BuildEncryptHead())
+                .WriteBytes(encrypt.AsSpan())
+                .WriteByte(3), Prefix.Uint16 | Prefix.WithPrefix, 1); // 0x03 is the packet end
         
-        packet.Barrier(typeof(ushort), () => new BinaryPacket()
-            .WriteUshort(8001, false) // ver
-            .WriteUshort(Cmd, false) // cmd: wtlogin.trans_emp: 2066, wtlogin.login: 2064
-            .WriteUshort(Keystore.Session.Sequence, false) // unique wtLoginSequence for wtlogin packets only, should be stored in KeyStore
-            .WriteUint(Keystore.Uin, false) // uin, 0 for wtlogin.trans_emp
-            .WriteByte(3) // extVer
-            .WriteByte(135) // cmdVer
-            .WriteUint(0, false) // actually unknown const 0
-            .WriteByte(19) // pubId
-            .WriteUshort(0, false) // insId
-            .WriteUshort(AppInfo.AppClientVersion, false) // cliType
-            .WriteUint(0, false) // retryTime
-            .WriteByte(1) // const
-            .WriteByte(1) // const
-            .WriteBytes(Keystore.Stub.RandomKey.AsSpan()) // randKey
-            .WriteUshort(0x102, false) // unknown const, 腾讯你妈妈死啦
-            .WriteBytes(Keystore.SecpImpl.GetPublicKey(), BinaryPacket.Prefix.Uint16 | BinaryPacket.Prefix.LengthOnly) // pubKey
-            .WriteBytes(encrypt.AsSpan())
-            .WriteByte(3), false, true, 1); // 0x03 is the packet end
+        // for the addition of 1, the packet start should be counted in
         
         return packet;
     }
 
     protected static BinaryPacket DeserializePacket(BotKeystore keystore, BinaryPacket packet)
     {
-        uint packetLength = packet.ReadUint(false);
+        uint packetLength = packet.ReadUint();
         if (packet.ReadByte() != 0x02) return new BinaryPacket(); // packet header
         
-        ushort internalLength = packet.ReadUshort(false);
-        ushort ver = packet.ReadUshort(false);
-        ushort cmd = packet.ReadUshort(false);
-        ushort sequence = packet.ReadUshort(false);
-        uint uin = packet.ReadUint(false);
+        ushort internalLength = packet.ReadUshort();
+        ushort ver = packet.ReadUshort();
+        ushort cmd = packet.ReadUshort();
+        ushort sequence = packet.ReadUshort();
+        uint uin = packet.ReadUint();
         byte flag = packet.ReadByte();
-        ushort retryTime = packet.ReadUshort(false);
+        ushort retryTime = packet.ReadUshort();
 
         var encrypted = packet.ReadBytes((int)(packet.Remaining - 1));
         var decrypted = new BinaryPacket(keystore.SecpImpl.Decrypt(encrypted));
@@ -74,5 +72,12 @@ internal abstract class WtLoginBase
         return decrypted;
     }
 
-    protected abstract BinaryPacket ConstructBody();
+    protected abstract BinaryPacket ConstructData();
+
+    private BinaryPacket BuildEncryptHead() => new BinaryPacket()
+        .WriteByte(1) // const
+        .WriteByte(1) // const
+        .WriteBytes(Keystore.Stub.RandomKey.AsSpan()) // randKey
+        .WriteUshort(0x102) // unknown const, 腾讯你妈妈死啦
+        .WriteBytes(Keystore.SecpImpl.GetPublicKey(), Prefix.Uint16 | Prefix.LengthOnly); // pubKey
 }

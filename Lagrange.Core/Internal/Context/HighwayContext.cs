@@ -1,6 +1,7 @@
 using System.Reflection;
 using Lagrange.Core.Common;
 using Lagrange.Core.Internal.Context.Uploader;
+using Lagrange.Core.Internal.Event.System;
 using Lagrange.Core.Internal.Packets.Service.Highway;
 using Lagrange.Core.Message;
 using Lagrange.Core.Utility.Binary;
@@ -15,12 +16,16 @@ namespace Lagrange.Core.Internal.Context;
 internal class HighwayContext : ContextBase, IDisposable
 {
     private const string Tag = nameof(HighwayContext);
-
-    private readonly Dictionary<Type, IHighwayUploader> _uploaders;
     
-    private readonly HttpClient _client;
-    private uint _sequence;
     private static readonly RuntimeTypeModel Serializer;
+
+    private uint _sequence;
+    private Uri? _uri;
+        
+    private readonly Dictionary<Type, IHighwayUploader> _uploaders;
+    private readonly HttpClient _client;
+    private readonly int _chunkSize;
+    private readonly uint _concurrent;
 
     static HighwayContext()
     {
@@ -28,7 +33,7 @@ internal class HighwayContext : ContextBase, IDisposable
         Serializer.UseImplicitZeroDefaults = false;
     }
     
-    public HighwayContext(ContextCollection collection, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device)
+    public HighwayContext(ContextCollection collection, BotKeystore keystore, BotAppInfo appInfo, BotDeviceInfo device, BotConfig config)
         : base(collection, keystore, appInfo, device)
     {
         _uploaders = new Dictionary<Type, IHighwayUploader>();
@@ -48,35 +53,8 @@ internal class HighwayContext : ContextBase, IDisposable
         _client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2)");
 
         _sequence = 0;
-    }
-
-    public async Task<bool> EchoAsync(uint uin)
-    {
-        var uri = new Uri($"http://htdata3.qq.com:80/cgi-bin/httpconn?htcmd=0x6FF0087&uin={uin}");
-        
-        var head = new ReqDataHighwayHead
-        {
-            MsgBaseHead = new DataHighwayHead
-            {
-                Version = 1, // isOpenUpEnable 2 else 1
-                Uin = Keystore.Uin.ToString(),
-                Command = "PicUp.Echo",
-                Seq = Interlocked.Increment(ref _sequence),
-                AppId = (uint)AppInfo.SubAppId,
-                CommandId = 0
-            }
-        };
-
-        try
-        {
-            var payload = await SendPacketAsync(head, new BinaryPacket(),  uri);
-            var (parsedHead, _) = ParsePacket(payload);
-            return parsedHead.ErrorCode == 0;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
+        _chunkSize = (int)config.HighwayChunkSize;
+        _concurrent = config.HighwayConcurrent;
     }
 
     public async Task UploadResources(MessageChain chain)
@@ -98,29 +76,54 @@ internal class HighwayContext : ContextBase, IDisposable
         }
     }
 
-    public async Task<bool> UploadSrcByStreamAsync(int commonId, Stream data, string ticket, byte[] md5, byte[]? extendInfo = null)
+    public async Task ManualUploadEntity(IMessageEntity entity)
     {
+        if (_uploaders.TryGetValue(entity.GetType(), out var uploader))
+        {
+            try
+            {
+                uint uin = Collection.Keystore.Uin;
+                string uid = Collection.Keystore.Uid ?? "";
+                var chain = new MessageChain(uin, uid, uid) { entity };
+                
+                await uploader.UploadPrivate(Collection, chain, entity);
+            }
+            catch
+            {
+                Collection.Log.LogFatal(Tag, $"Upload resources for {entity.GetType().Name} failed");
+            }
+        }
+    }
+
+    public async Task<bool> UploadSrcByStreamAsync(int commonId, Stream data, byte[] ticket, byte[] md5, byte[]? extendInfo = null)
+    {
+        if (_uri == null)
+        {
+            var highwayUrlEvent = await Collection.Business.SendEvent(HighwayUrlEvent.Create());
+            var result = (HighwayUrlEvent)highwayUrlEvent[0];
+            _uri = result.HighwayUrls[1][0];
+        }
+        
         bool success = true;
         var upBlocks = new List<UpBlock>();
-        var uri = new Uri($"http://htdata3.qq.com:80/cgi-bin/httpconn?htcmd=0x6FF0087&uin={Collection.Keystore.Uin}");
 
         long fileSize = data.Length;
         int offset = 0;
-        int chunkSize = fileSize is >= 1024 and <= 1048575 ? 8192 : 1024 * 1024;
-        int concurrent = commonId == 2 ? 1 : 8;
 
         data.Seek(0, SeekOrigin.Begin);
         while (offset < fileSize)
         {
-            var buffer = new byte[Math.Min(chunkSize, fileSize - offset)];
+            var buffer = new byte[Math.Min(_chunkSize, fileSize - offset)];
             int payload = await data.ReadAsync(buffer.AsMemory());
-            var reqBody = new UpBlock(commonId, Collection.Keystore.Uin, Interlocked.Increment(ref _sequence), (ulong)fileSize, (ulong)offset, ticket, md5, buffer, extendInfo);
+            uint uin = Collection.Keystore.Uin;
+            uint sequence = Interlocked.Increment(ref _sequence);
+            var reqBody = new UpBlock(commonId, uin, sequence, (ulong)fileSize, (ulong)offset, ticket, md5, buffer, extendInfo);
             upBlocks.Add(reqBody);
             offset += payload;
 
-            if (upBlocks.Count >= concurrent || data.Position == data.Length)
+            if (upBlocks.Count >= _concurrent || data.Position == data.Length)
             {
-                var tasks = upBlocks.Select(x => SendUpBlockAsync(x, uri)).ToArray();
+                var tasks = upBlocks.Select(x => SendUpBlockAsync(x, _uri)).ToArray();
                 var results = await Task.WhenAll(tasks);
                 success &= results.All(x => x);
                 
@@ -140,6 +143,7 @@ internal class HighwayContext : ContextBase, IDisposable
             Command = "PicUp.DataUp",
             Seq = upBlock.Sequence,
             AppId = (uint)AppInfo.SubAppId,
+            DataFlag = 16,
             CommandId = (uint)upBlock.CommandId,
         };
         var segHead = new SegHead
@@ -151,13 +155,19 @@ internal class HighwayContext : ContextBase, IDisposable
             Md5 = (await upBlock.Block.Md5Async()).UnHex(),
             FileMd5 = upBlock.FileMd5,
         };
-        
+        var loginHead = new LoginSigHead
+        {
+            Uint32LoginSigType = 8,
+            BytesLoginSig = Collection.Keystore.Session.Tgt,
+            AppId = (uint)Collection.AppInfo.AppId
+        };
         var highwayHead = new ReqDataHighwayHead
         {
             MsgBaseHead = head,
             MsgSegHead = segHead,
             BytesReqExtendInfo = upBlock.ExtendInfo,
             Timestamp = upBlock.Timestamp,
+            MsgLoginSigHead = loginHead
         };
 
         bool isEnd = upBlock.Offset + (ulong)upBlock.Block.Length == upBlock.FileSize;
@@ -176,8 +186,8 @@ internal class HighwayContext : ContextBase, IDisposable
         
         var writer = new BinaryPacket()
                 .WriteByte(0x28) // packet start
-                .WriteInt((int)stream.Length, false)
-                .WriteInt((int)buffer.Length, false)
+                .WriteInt((int)stream.Length)
+                .WriteInt((int)buffer.Length)
                 .WriteBytes(stream.ToArray())
                 .WritePacket(buffer)
                 .WriteByte(0x29); // packet end
@@ -189,9 +199,9 @@ internal class HighwayContext : ContextBase, IDisposable
     {
         if (packet.ReadByte() == 0x28)
         {
-            int headLength = packet.ReadInt(false);
-            int bodyLength = packet.ReadInt(false);
-            var head = Serializer.Deserialize<RespDataHighwayHead>(packet.ReadBytes(headLength).AsSpan());
+            int headLength = packet.ReadInt();
+            int bodyLength = packet.ReadInt();
+            var head = Serializer.Deserialize<RespDataHighwayHead>(packet.ReadBytes(headLength));
             var body = packet.ReadPacket(bodyLength);
             
             if (packet.ReadByte() == 0x29) return (head, body);
@@ -222,7 +232,7 @@ internal class HighwayContext : ContextBase, IDisposable
         uint Sequence, 
         ulong FileSize,
         ulong Offset, 
-        string Ticket,
+        byte[] Ticket,
         byte[] FileMd5,
         byte[] Block, 
         byte[]? ExtendInfo = null,
